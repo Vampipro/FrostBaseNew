@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------- Користувачі ----------
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  password      String
+  role          String   @default("user") // "user" | "moderator" | "admin"
+  image         String   @default("")
+  banReason     String   @default("")
+  isSponsor     Boolean  @default(false)
+  donated       Decimal  @default(0) @db.Decimal(12, 2)
+  isPlaceholder Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  submissions    Submission[]
+  comments       Comment[]
+  appeals        Appeal[]
+  commentReports CommentReport[]
+  searchLogs     SearchLog[]
+}
+
+// ---------- Скамери ----------
+model Scammer {
+  id              Int       @id @default(autoincrement())
+  name            String // username / відображуване ім'я
+  telegramUserId  BigInt? // числовий Telegram ID
+  description     String    @default("")
+  moderation      String    @default("approved") // "pending" | "approved" | "rejected"
+  submittedAt     DateTime? // дата подачі на модерацію
+  typeId          Int?
+  scamDate        DateTime?
+  scamAmount      Decimal?  @db.Decimal(18, 2)
+  scamCurrency    String    @default("")
+  proofLink       String    @default("")
+  screenshots     String[]  @default([])
+  appealsDisabled Boolean   @default(false)
+  searchCount     Int       @default(0)
+  viewCount       Int       @default(0)
+  likeCount       Int       @default(0)
+  neutralCount    Int       @default(0)
+  dislikeCount    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  type        ScammerType?         @relation(fields: [typeId], references: [id], onDelete: SetNull)
+  statuses    ScammerStatusLink[]
+  submissions Submission[]
+  nameHistory ScammerNameHistory[]
+  comments    Comment[]
+  votes       Vote[]
+  appeals     Appeal[]
+  searchLogs  SearchLog[]
+
+  @@index([name])
+  @@index([telegramUserId])
+  @@index([moderation])
+  @@index([typeId])
+}
+
+model ScammerNameHistory {
+  id        Int      @id @default(autoincrement())
+  scammerId Int
+  oldName   String
+  newName   String
+  createdAt DateTime @default(now())
+
+  scammer Scammer @relation(fields: [scammerId], references: [id], onDelete: Cascade)
+
+  @@index([scammerId])
+}
+
+// Статуси = «теги» (СКАМ, Перевірений, ...). Адмін може додавати/ховати.
+model ScammerStatus {
+  id           Int      @id @default(autoincrement())
+  key          String   @unique
+  label        String
+  translations Json     @default("{}") // {"ua":"...","en":"...","ru":"..."}
+  description  String   @default("")
+  color        String   @default("#ef4444")
+  textColor    String   @default("#ffffff")
+  sortOrder    Int      @default(0)
+  isDefault    Boolean  @default(false)
+  hidden       Boolean  @default(false) // сховати повністю
+  showInForm   Boolean  @default(true) // показувати у формі жалоби
+  createdAt    DateTime @default(now())
+
+  scammers ScammerStatusLink[]
+}
+
+model ScammerStatusLink {
+  scammerId Int
+  statusId  Int
+
+  scammer Scammer       @relation(fields: [scammerId], references: [id], onDelete: Cascade)
+  status  ScammerStatus @relation(fields: [statusId], references: [id], onDelete: Cascade)
+
+  @@id([scammerId, statusId])
+  @@index([statusId])
+}
+
+// Тип: людина / бот / nft (+ свої) — фільтр у пошуку
+model ScammerType {
+  id           Int     @id @default(autoincrement())
+  key          String  @unique
+  label        String
+  translations Json    @default("{}")
+  sortOrder    Int     @default(0)
+  hidden       Boolean @default(false)
+
+  scammers Scammer[]
+}
+
+// ---------- Жалоби (подачі) ----------
+model Submission {
+  id              Int      @id @default(autoincrement())
+  scammerId       Int
+  reporterId      Int?
+  ip              String   @default("")
+  contactUsername String   @default("") // якщо заявник погодився на зв'язок
+  description     String   @default("")
+  screenshots     String[] @default([])
+  scamAmount      Decimal? @db.Decimal(18, 2)
+  scamCurrency    String   @default("")
+  status          String   @default("pending") // "pending" | "approved" | "rejected" | "revision"
+  revisionReason  String   @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  scammer  Scammer @relation(fields: [scammerId], references: [id], onDelete: Cascade)
+  reporter User?   @relation(fields: [reporterId], references: [id], onDelete: SetNull)
+
+  @@index([scammerId])
+  @@index([status])
+  @@index([ip, createdAt])
+}
+
+// ---------- Взаємодії ----------
+model Vote {
+  id        Int      @id @default(autoincrement())
+  scammerId Int
+  voteType  String // "like" | "neutral" | "dislike"
+  voterId   String // "user:{id}" або "ip:{ip}"
+  createdAt DateTime @default(now())
+
+  scammer Scammer @relation(fields: [scammerId], references: [id], onDelete: Cascade)
+
+  @@unique([scammerId, voterId])
+  @@index([scammerId])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  scammerId Int
+  userId    Int
+  approved  Boolean  @default(false)
+  hidden    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scammer Scammer         @relation(fields: [scammerId], references: [id], onDelete: Cascade)
+  reports CommentReport[]
+
+  @@index([scammerId])
+}
+
+// Скарги на коментарі користувачів
+model CommentReport {
+  id         Int      @id @default(autoincrement())
+  commentId  Int
+  reporterId Int?
+  ip         String   @default("")
+  reason     String   @default("")
+  status     String   @default("pending") // "pending" | "resolved" | "dismissed"
+  createdAt  DateTime @default(now())
+
+  comment  Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporter User?   @relation(fields: [reporterId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+}
+
+// Апеляції («я не винен»)
+model Appeal {
+  id          Int      @id @default(autoincrement())
+  scammerId   Int
+  userId      Int?
+  ip          String   @default("")
+  description String   @default("")
+  screenshots String[] @default([])
+  status      String   @default("pending") // "pending" | "accepted" | "rejected" | "banned"
+  createdAt   DateTime @default(now())
+
+  scammer Scammer @relation(fields: [scammerId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([scammerId])
+  @@index([status])
+}
+
+model SearchLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  scammerId Int?
+  query     String
+  createdAt DateTime @default(now())
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  scammer Scammer? @relation(fields: [scammerId], references: [id], onDelete: SetNull)
+
+  @@index([query])
+  @@index([createdAt])
+}
+
+// ---------- Захист і налаштування ----------
+model BannedIp {
+  id        Int      @id @default(autoincrement())
+  ip        String   @unique
+  reason    String   @default("")
+  bannedBy  String   @default("")
+  createdAt DateTime @default(now())
+}
+
+// Лічильник дій по IP (ліміти). Працює без Redis.
+model RateLimit {
+  id        Int      @id @default(autoincrement())
+  action    String // "submission" | "vote" | "comment" | "appeal" | "report"
+  key       String // IP
+  createdAt DateTime @default(now())
+
+  @@index([action, key, createdAt])
+}
+
+// Налаштування з адмінки: інструкція до форми (UA/EN/RU) тощо
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
