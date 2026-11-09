@@ -3,7 +3,11 @@ import { cookies } from "next/headers";
 import { prisma } from "./db";
 
 const COOKIE = "fb_session";
-const key = () => new TextEncoder().encode(process.env.SESSION_SECRET || "dev-secret-change-me");
+const key = () => {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret && process.env.NODE_ENV === "production") throw new Error("SESSION_SECRET не задано у змінних оточення Vercel");
+  return new TextEncoder().encode(secret || "dev-only-secret");
+};
 
 export async function createSession(userId: number) {
   const token = await new SignJWT({ uid: userId }).setProtectedHeader({ alg: "HS256" }).setExpirationTime("30d").sign(key());
