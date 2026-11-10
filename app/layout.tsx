@@ -1,15 +1,23 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import Providers from "@/components/Providers";
 import { Background, Footer, Topbar } from "@/components/Chrome";
 
-export const metadata: Metadata = { title: "FROSTBASE — чекер скамерів", description: "Перевір юзернейм або Telegram ID за базою скамерів" };
+export const metadata: Metadata = { title: "FROSTBASE — чекер скамеров", description: "Проверь юзернейм или Telegram ID по базе скамеров" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#050d1a" };
+
+// Виконується до першого малювання: тема, ефекти й мова без «миготіння»
+const INIT = `try{var d=document.documentElement,s=JSON.parse(localStorage.getItem('fb_settings')||'null'),rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(!s){var o=localStorage.getItem('fb_theme');s={theme:o==='neon'?'neon':'frost',bg:!rm,grid:true,scan:!rm,anim:!rm,glow:true}}
+d.dataset.theme=s.theme||'frost';d.dataset.bg=s.bg===false?'off':'on';d.dataset.grid=s.grid===false?'off':'on';d.dataset.scan=s.scan===false?'off':'on';d.dataset.anim=s.anim===false?'off':'on';d.dataset.glow=s.glow===false?'off':'on';
+var l=localStorage.getItem('fb_lang')||'ru';d.lang=l==='ua'?'uk':l}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="uk" data-theme="frost">
+    <html lang="ru" data-theme="frost" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: INIT }} />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/unbounded/400.css" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/unbounded/700.css" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono/400.css" />

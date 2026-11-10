@@ -60,8 +60,8 @@ export default function Dict({ kind }: { kind: "statuses" | "types" }) {
   if (!rows) return <div className="empty-sub">Завантаження…</div>;
   return (
     <div>
-      <h3 className="sub-title" style={{ marginTop: 0 }}>Додати {kind === "statuses" ? "новий тег" : "новий тип"}</h3>
-      <Row key={"new" + n} kind={kind} row={blank(kind)} onDone={load} />
+      <h3 className="sub-title" style={{ marginTop: 0 }}>＋ Додати {kind === "statuses" ? "новий тег" : "новий тип"}</h3>
+      <div className="add-panel"><Row key={"new" + n} kind={kind} row={blank(kind)} onDone={load} /></div>
       <h3 className="sub-title">Існуючі</h3>
       {rows.map((r) => <Row key={r.id + "-" + n} kind={kind} row={r} onDone={load} />)}
     </div>

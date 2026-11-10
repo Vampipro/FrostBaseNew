@@ -81,6 +81,7 @@ export async function GET(req: Request) {
   return ok({
     q,
     total,
+    capped: rows.length >= 300,
     page,
     pages: Math.max(1, Math.ceil(total / PAGE)),
     results: rows.slice((page - 1) * PAGE, page * PAGE).map(toCard),

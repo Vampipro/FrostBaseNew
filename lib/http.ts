@@ -9,9 +9,11 @@ export function ok(data: unknown, status = 200) {
 export const fail = (error: string, status = 400) => ok({ error }, status);
 
 export function getIp(req: Request): string {
-  const xf = req.headers.get("x-forwarded-for");
-  if (xf) return xf.split(",")[0].trim();
-  return req.headers.get("x-real-ip") || "0.0.0.0";
+  const h = req.headers;
+  const direct = h.get("x-vercel-forwarded-for") || h.get("x-real-ip");
+  if (direct) return direct.split(",")[0].trim();
+  const xf = h.get("x-forwarded-for");
+  return xf ? xf.split(",")[0].trim() : "0.0.0.0";
 }
 
 export async function readBody<T = any>(req: Request): Promise<T> {

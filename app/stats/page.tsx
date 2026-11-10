@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api, useApp } from "@/components/Providers";
 import ScammerCard from "@/components/ScammerCard";
 import ScammerView from "@/components/ScammerView";
+import Modal from "@/components/Modal";
 import { tr } from "@/lib/i18n";
 
 const fmt = (n: number) => String(n ?? 0).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
@@ -87,14 +88,7 @@ export default function StatsPage() {
       <h3 className="zone-title"><span className="zt-ico">❄</span><span>{t("st_latest")}</span></h3>
       <div className="results-grid">{s.latest.map((x: any) => <ScammerCard key={x.id} s={x} onOpen={setOpenId} />)}</div>
 
-      {openId != null && (
-        <div className="modal-overlay" onClick={() => setOpenId(null)}>
-          <div className="modal wide" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-x" aria-label="close" onClick={() => setOpenId(null)}>✕</button>
-            <ScammerView id={openId} />
-          </div>
-        </div>
-      )}
+      {openId != null && <Modal wide onClose={() => setOpenId(null)}><ScammerView id={openId} /></Modal>}
     </main>
   );
 }

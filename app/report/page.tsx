@@ -13,7 +13,8 @@ export default function ReportPage() {
 
   useEffect(() => { api("/api/meta").then((m) => m.statuses && setMeta(m)); }, []);
   const statuses = (meta?.statuses ?? []).filter((s: any) => s.showInForm);
-  const instruction = meta?.instruction?.[lang] || meta?.instruction?.ua || "";
+  const ins = meta?.instruction ?? {};
+  const instruction = ins[lang] || ins.ru || ins.ua || ins.en || "";
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +33,7 @@ export default function ReportPage() {
   };
 
   if (done) return (
-    <main className="page"><div className="panel narrow"><h2 className="zone-title">✓ {t("r_title")}</h2><p className="desc">{t("r_ok")}</p></div></main>
+    <main className="page"><div className="panel narrow"><h2 className="zone-title">✓ {t("r_title")}</h2><p className="desc">{t("r_ok")}</p><button className="btn" onClick={() => { setDone(false); setF({ username: "", telegramId: "", statusId: "", shots: "", description: "", scamAmount: "", scamCurrency: "", wantContact: false, contactUsername: "", website: "" }); }}>{t("report_again")}</button></div></main>
   );
 
   return (

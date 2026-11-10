@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, useApp } from "../Providers";
 import { Badges, fmtDate } from "../ScammerCard";
+import Modal from "../Modal";
 
 const EMPTY = { name: "", telegramUserId: "", description: "", typeId: "", statusIds: [] as number[], scamAmount: "", scamCurrency: "", scamDate: "", proofLink: "", screenshots: "", moderation: "approved", appealsDisabled: false, likeCount: 0, neutralCount: 0, dislikeCount: 0, viewCount: 0, searchCount: 0 };
 
@@ -28,9 +29,7 @@ function Editor({ item, statuses, types, onClose, onSaved }: { item: any | null;
     onClose();
   };
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal wide" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-x" onClick={onClose}>✕</button>
+    <Modal wide onClose={onClose}>
         <h3 className="zone-title" style={{ marginTop: 0 }}>{item ? `Редагувати #${item.id}` : "Новий запис"}</h3>
         <div className="row2">
           <label className="field"><span>Юзернейм</span><input value={f.name} onChange={(e) => set("name", e.target.value)} /></label>
@@ -67,8 +66,7 @@ function Editor({ item, statuses, types, onClose, onSaved }: { item: any | null;
           <button className="btn" onClick={save}>Зберегти</button>
           <button className="btn ghost" onClick={onClose}>Скасувати</button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -123,7 +121,7 @@ export default function Moderation() {
         </select>
         <select value={dir} onChange={(e) => setDir(e.target.value)}><option value="desc">↓ спадання</option><option value="asc">↑ зростання</option></select>
         <input placeholder="Пошук: юз, ID або #id" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
-        <button className="btn" onClick={() => setEdit(null)}>+ Додати</button>
+        <button className="btn add-btn" onClick={() => setEdit(null)}>+ Додати запис</button>
       </div>
       {!data ? <div className="empty-sub">Завантаження…</div> : data.error ? <div className="empty-sub">{data.error}</div> : (
         <>
@@ -159,6 +157,7 @@ export default function Moderation() {
             </div>
           ))}
           {data.items.length === 0 && <div className="empty-sub">Порожньо</div>}
+          <button className="add-block" onClick={() => setEdit(null)}>+ Додати запис</button>
           {data.pages > 1 && (
             <div className="pager"><button className="btn ghost" disabled={page <= 1} onClick={() => setPage(page - 1)}>‹</button><span>{page} / {data.pages}</span><button className="btn ghost" disabled={page >= data.pages} onClick={() => setPage(page + 1)}>›</button></div>
           )}

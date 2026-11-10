@@ -403,3 +403,107 @@ kbd{border:1px solid var(--line);padding:1px 6px;font-size:10px;color:var(--acc)
   .bar-k{width:80px}
   .page{padding:16px 4vw 50px}
 }
+
+/* ======================= v2.1: полірування, світла тема, режим ефектів ======================= */
+/* ---- базові покращення ---- */
+body{line-height:1.5;-webkit-font-smoothing:antialiased}
+select option{background:var(--panel);color:var(--text)}
+input::placeholder,textarea::placeholder{color:var(--dim);opacity:.75}
+textarea{resize:vertical;font-family:inherit}
+.btn{padding:12px 22px;line-height:1.15;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.btn.sm,.admin-item .btn,.settings-pop .btn{padding:8px 14px;font-size:10px;letter-spacing:1.5px}
+.btn.ghost.danger:hover{background:rgba(255,77,109,.12)}
+.modal{padding:30px 28px 26px}
+.modal-actions{align-items:center}
+.modal-head{padding-right:34px}
+.results-grid{align-items:stretch}
+
+/* ---- картки ---- */
+.card{display:flex;flex-direction:column;transition:transform .2s,border-color .2s,box-shadow .2s}
+.card .c-foot{margin-top:auto}
+.c-foot{flex-wrap:wrap;row-gap:8px}
+.c-price{font-family:inherit;font-weight:700;font-size:12px;color:var(--text);letter-spacing:.3px}
+.c-foot .c-date{margin-left:auto}
+.c-foot .c-btn{flex:none}
+.c-user{font-weight:700;color:var(--ice);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.card-top{min-width:0}
+
+/* ---- додати-блок і форми адмінки ---- */
+.toolbar .add-btn{margin-left:auto}
+.add-block{display:flex;width:100%;justify-content:center;align-items:center;gap:8px;margin:18px 0 6px;padding:20px;border:1px dashed var(--acc);background:transparent;color:var(--acc);cursor:pointer;font:inherit;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;transition:.2s}
+.add-block:hover{background:rgba(95,217,255,.08);box-shadow:0 0 14px var(--glow)}
+.add-panel .panel{border-color:var(--acc)}
+.add-panel .modal-actions .btn{min-width:150px}
+.admin-item .modal-actions{gap:8px}
+.admin-head b{color:var(--ice)}
+.admin-tabs .tag-chip{padding:8px 14px;font-size:12px}
+
+/* ---- налаштування ---- */
+.settings-wrap{position:relative}
+.settings-pop{position:absolute;right:0;top:calc(100% + 12px);width:min(330px,92vw);z-index:70;background:var(--panel);border:1px solid var(--acc);padding:18px;display:flex;flex-direction:column;gap:13px;box-shadow:0 20px 44px rgba(0,0,0,.45)}
+.settings-pop h4{font-family:'Unbounded',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ice)}
+.theme-seg button{flex:1}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;cursor:pointer}
+.sw input{appearance:none;-webkit-appearance:none;flex:none;width:40px;height:21px;background:var(--field);border:1px solid var(--line);position:relative;cursor:pointer;transition:.2s}
+.sw input::after{content:'';position:absolute;top:2px;left:2px;width:15px;height:15px;background:var(--dim);transition:.2s}
+.sw input:checked{border-color:var(--acc)}
+.sw input:checked::after{left:21px;background:var(--acc)}
+.settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+
+/* ---- ефекти вимикаються атрибутами на <html> ---- */
+html[data-bg="off"] .bg-art,html[data-bg="off"] .bg-veil{display:none}
+html[data-grid="off"] .grid-bg{display:none}
+html[data-scan="off"] .scanlines{display:none}
+html[data-anim="off"] *,html[data-anim="off"] *::before,html[data-anim="off"] *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+html[data-anim="off"] .glitch::before,html[data-anim="off"] .glitch::after,html[data-anim="off"] .art-ring{display:none}
+html[data-anim="off"] .card:hover{transform:none}
+html[data-glow="off"]{--glow:transparent}
+html[data-glow="off"] *{text-shadow:none!important}
+html[data-glow="off"] .glitch::before,html[data-glow="off"] .glitch::after{display:none}
+html[data-glow="off"] .tag-chip:hover,html[data-glow="off"] .tag-chip.on,html[data-glow="off"] .card:hover,html[data-glow="off"] .ex-chip:hover,html[data-glow="off"] .add-block:hover{box-shadow:none}
+@media (prefers-reduced-motion:reduce){html:not([data-anim="on"]) *{animation:none!important;transition:none!important}}
+
+/* ---- СВІТЛА ТЕМА ---- */
+[data-theme="light"]{
+  --bg:#f2f6fb; --bg2:#e7eff7; --panel:#ffffff; --panel2:#f6f9fd;
+  --field:#ffffff; --bar:rgba(255,255,255,.86);
+  --line:rgba(16,58,98,.17); --acc:#0b7db5; --acc2:#0a5f8a;
+  --ice:#0d2236; --text:#27405a; --dim:#5d7891;
+  --ok:#0a9d5c; --hold:#b97a00; --sold:#d6304f;
+  --glow:rgba(11,125,181,.22); --btn-ink:#ffffff;
+  color-scheme:light;
+}
+[data-theme="light"] body{background:radial-gradient(1000px 520px at 78% -8%,#d6e8f7,transparent),linear-gradient(180deg,#f5f9fd,#e8f0f7);background-attachment:fixed}
+[data-theme="light"] .bg-art,[data-theme="light"] .bg-veil,[data-theme="light"] .scanlines{display:none}
+[data-theme="light"] .grid-bg{opacity:.6}
+[data-theme="light"] .topbar{box-shadow:0 2px 14px rgba(16,58,98,.07)}
+[data-theme="light"] .panel,[data-theme="light"] .card{box-shadow:0 1px 0 rgba(16,58,98,.05)}
+[data-theme="light"] .glitch{text-shadow:none}
+[data-theme="light"] .glitch::before,[data-theme="light"] .glitch::after{display:none}
+[data-theme="light"] .stat-num{text-shadow:none}
+[data-theme="light"] .m-cell,[data-theme="light"] .form-card.inner{background:rgba(16,58,98,.04)}
+[data-theme="light"] .instruction{background:rgba(11,125,181,.06)}
+[data-theme="light"] .modal-overlay{background:rgba(13,34,54,.45)}
+[data-theme="light"] .modal{border-color:var(--acc)}
+[data-theme="light"] .tag-chip:not(.on){background:#fff;text-shadow:none}
+[data-theme="light"] .tag-chip.on{color:#fff}
+[data-theme="light"] .st-pending,[data-theme="light"] .warn-box{color:#8a5a00;border-color:#b97a00;background:rgba(255,200,87,.25)}
+[data-theme="light"] .btn.ghost:hover{background:rgba(11,125,181,.08)}
+[data-theme="light"] .search-btn{color:#fff}
+[data-theme="light"] .toast{background:#fff;color:var(--ice)}
+[data-theme="light"] ::-webkit-scrollbar-thumb{background:#c9d9e8}
+[data-theme="light"] .settings-pop{box-shadow:0 18px 40px rgba(16,58,98,.18)}
+[data-theme="light"] .bar{background:rgba(16,58,98,.08)}
+[data-theme="light"] .add-block:hover{background:rgba(11,125,181,.07)}
+
+/* ---- мобільна версія ---- */
+@media (max-width:620px){
+  .settings-wrap{position:static}
+  .settings-pop{position:fixed;right:10px;left:10px;top:60px;width:auto}
+  .toolbar .add-btn{margin-left:0;width:100%}
+  .toolbar>*{flex:1 1 140px}
+  .c-foot .c-date{margin-left:0}
+  .modal{padding:26px 16px 20px}
+  .controls{gap:6px}
+  .who{display:none}
+}

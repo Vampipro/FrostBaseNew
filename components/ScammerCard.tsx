@@ -8,7 +8,7 @@ export const fmtDate = (d: string | Date | null | undefined, lang = "uk") =>
 export function avatarGrad(str: string, theme: string) {
   let h = 0;
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 997;
-  const hue = ((theme === "frost" ? 185 : 285) + (h % 70)) % 360;
+  const hue = ((theme === "neon" ? 285 : theme === "light" ? 205 : 185) + (h % 70)) % 360;
   return `linear-gradient(135deg, hsl(${hue},85%,72%), hsl(${(hue + 45) % 360},80%,45%))`;
 }
 
