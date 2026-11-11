@@ -18,7 +18,7 @@ export function Background() {
 }
 
 function SettingsPanel() {
-  const { t, settings, setSetting, lite, resetSettings } = useApp();
+  const { t, settings, setSetting, resetSettings } = useApp();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -40,11 +40,11 @@ function SettingsPanel() {
           <div className="lang-seg theme-seg">
             {themes.map((th) => <button key={th} className={settings.theme === th ? "on" : ""} onClick={() => setSetting("theme", th)}>{t("th_" + th)}</button>)}
           </div>
+          <label className="sw"><span>{t("set_lite")}</span><input type="checkbox" checked={settings.lite} onChange={(e) => setSetting("lite", e.target.checked)} /></label>
           {toggles.map(([k, label]) => (
             <label className="sw" key={k}><span>{t(label)}</span><input type="checkbox" checked={settings[k]} onChange={(e) => setSetting(k, e.target.checked)} /></label>
           ))}
           <div className="settings-actions">
-            <button className="btn sm" onClick={lite}>{t("set_lite")}</button>
             <button className="btn ghost sm" onClick={resetSettings}>{t("set_reset")}</button>
           </div>
         </div>
@@ -60,7 +60,7 @@ export function Topbar() {
   return (
     <header className="topbar">
       <Link className="logo-wrap" href="/">
-        <svg className="logo-svg"><use href="#logoSym" /></svg>
+        <img className="logo-img" src="/logo-128.png" width={42} height={42} alt="FROSTBASE" decoding="async" />
         <span className="brand">FROST<span className="brand-accent">BASE</span></span>
       </Link>
       <nav className={"main-nav" + (open ? " open" : "")} onClick={() => setOpen(false)}>
@@ -94,7 +94,7 @@ export function Footer() {
   const { t } = useApp();
   return (
     <footer className="footer">
-      <div className="f-left"><svg className="logo-svg small"><use href="#logoSym" /></svg><span>© {new Date().getFullYear()} FROSTBASE</span></div>
+      <div className="f-left"><img className="logo-img small" src="/logo-128.png" width={26} height={26} alt="" decoding="async" /><span>© {new Date().getFullYear()} FROSTBASE</span></div>
       <div className="f-note">{t("footer_note")}</div>
     </footer>
   );

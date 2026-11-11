@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, useApp } from "../Providers";
 import { fmtDate } from "../ScammerCard";
 import { safeHref } from "@/lib/url";
+import { uname } from "@/lib/name";
 
 export function Comments() {
   const { toast, lang } = useApp();
@@ -64,7 +65,7 @@ export function Appeals() {
       {rows.length === 0 && <div className="empty-sub">Порожньо</div>}
       {rows.map((a) => (
         <div className="panel admin-item" key={a.id}>
-          <div className="admin-head"><b>Апеляція #{a.id}</b><Link className="link-btn" href={"/s/" + a.scammer.id} target="_blank">@{a.scammer.name} (#{a.scammer.id})</Link><span className="c-date">{fmtDate(a.createdAt, lang)} · {a.user?.username ?? "гість"} · IP {a.ip || "—"} · {a.status}</span></div>
+          <div className="admin-head"><b>Апеляція #{a.id}</b><Link className="link-btn" href={"/s/" + a.scammer.id} target="_blank">{uname(a.scammer.name)} (#{a.scammer.id})</Link><span className="c-date">{fmtDate(a.createdAt, lang)} · {a.user?.username ?? "гість"} · IP {a.ip || "—"} · {a.status}</span></div>
           <p className="desc">{a.description}</p>
           {a.screenshots.length > 0 && <ul className="links">{a.screenshots.map((u: string, i: number) => <li key={i}><a href={safeHref(u)} target="_blank" rel="noopener noreferrer nofollow">{u.slice(0, 70)}</a></li>)}</ul>}
           <div className="modal-actions">

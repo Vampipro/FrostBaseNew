@@ -5,6 +5,7 @@ import ScammerCard from "@/components/ScammerCard";
 import ScammerView from "@/components/ScammerView";
 import Modal from "@/components/Modal";
 import { tr } from "@/lib/i18n";
+import { uname } from "@/lib/name";
 
 const fmt = (n: number) => String(n ?? 0).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
@@ -38,7 +39,7 @@ export default function StatsPage() {
       <h3 className="sub-title" style={{ marginTop: 0 }}>{title}</h3>
       <ol className="toplist">
         {rows.map((r) => (
-          <li key={r.id}><button className="link-btn" onClick={() => setOpenId(r.id)}>@{r.name}</button><span>👁 {r.viewCount} · 🔍 {r.searchCount} · 👍 {r.likeCount}</span></li>
+          <li key={r.id}><button className="link-btn" onClick={() => setOpenId(r.id)}>{uname(r.name)}</button><span>👁 {r.viewCount} · 🔍 {r.searchCount} · 👍 {r.likeCount}</span></li>
         ))}
       </ol>
     </div>

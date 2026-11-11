@@ -7,7 +7,7 @@ export const cardInclude = {
 export function toCard(s: any) {
   return {
     id: s.id,
-    name: s.name,
+    name: String(s.name ?? "").replace(/^@+/, ""),
     telegramUserId: s.telegramUserId?.toString() ?? null,
     moderation: s.moderation,
     submittedAt: s.submittedAt,

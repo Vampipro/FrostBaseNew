@@ -4,6 +4,7 @@ import { api, useApp } from "../Providers";
 import { Badges, fmtDate } from "../ScammerCard";
 import Modal from "../Modal";
 import { safeHref } from "@/lib/url";
+import { uname } from "@/lib/name";
 
 const EMPTY = { name: "", telegramUserId: "", description: "", typeId: "", statusIds: [] as number[], scamAmount: "", scamCurrency: "", scamDate: "", proofLink: "", screenshots: "", moderation: "approved", appealsDisabled: false, likeCount: 0, neutralCount: 0, dislikeCount: 0, viewCount: 0, searchCount: 0 };
 
@@ -130,7 +131,7 @@ export default function Moderation() {
           {data.items.map((s: any) => (
             <div className="panel admin-item" key={s.id}>
               <div className="admin-head">
-                <b>#{s.id} @{s.name}</b>{s.telegramUserId && <span className="c-id">ID {s.telegramUserId}</span>}
+                <b>#{s.id} {uname(s.name)}</b>{s.telegramUserId && <span className="c-id">ID {s.telegramUserId}</span>}
                 <Badges s={s} />{s.type && <span className="mini-tag">{s.type.label}</span>}
                 <span className="c-date">{fmtDate(s.submittedAt ?? s.createdAt, lang)}</span>
               </div>
@@ -139,7 +140,7 @@ export default function Moderation() {
                 <div className="warn-box">
                   ⚠ Уже є схожі записи:{" "}
                   {s.similar.map((x: any) => (
-                    <span key={x.id} className="sim-link">#{x.id} @{x.name} {x.exact ? "(точний збіг)" : ""}<button className="link-btn" onClick={() => { const t = window.prompt(`Об'єднати #${s.id} з #${x.id}? Введи ID цілі:`, String(x.id)); if (t) act(s.id, "merge", { targetId: Number(t) }); }}>об'єднати</button></span>
+                    <span key={x.id} className="sim-link">#{x.id} {uname(x.name)} {x.exact ? "(точний збіг)" : ""}<button className="link-btn" onClick={() => { const t = window.prompt(`Об'єднати #${s.id} з #${x.id}? Введи ID цілі:`, String(x.id)); if (t) act(s.id, "merge", { targetId: Number(t) }); }}>об'єднати</button></span>
                   ))}
                 </div>
               )}

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { ok, fail, getIp, readBody, normName, parseAmount, isHttpUrl } from "@/lib/http";
 import { currentUser } from "@/lib/auth";
 import { consume, getLimits, isBanned } from "@/lib/guard";
+import { isTgId } from "@/lib/name";
 
 export async function POST(req: Request) {
   const b = await readBody(req);
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
   const username = normName(str(b.username, 64));
   const tg = str(b.telegramId, 20).replace(/\s/g, "");
   if (!username && !tg) return fail("Вкажи юзернейм або Telegram ID");
-  if (tg && !/^\d{1,19}$/.test(tg)) return fail("Telegram ID має складатися лише з цифр");
+  if (tg && !isTgId(tg)) return fail("Telegram ID має складатися лише з цифр");
   if (username && !/^[A-Za-z0-9_]{3,64}$/.test(username)) return fail("Юзернейм: латиниця, цифри та _ (мін. 3 символи)");
 
   const statusId = Number(b.statusId);

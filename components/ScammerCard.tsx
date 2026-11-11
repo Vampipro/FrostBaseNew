@@ -1,6 +1,7 @@
 "use client";
 import { useApp } from "./Providers";
 import { tr } from "@/lib/i18n";
+import { uname } from "@/lib/name";
 
 export const fmtDate = (d: string | Date | null | undefined, lang = "uk") =>
   d ? new Date(d).toLocaleDateString(lang === "ua" ? "uk-UA" : lang === "ru" ? "ru-RU" : "en-GB") : "";
@@ -37,9 +38,9 @@ export default function ScammerCard({ s, pct, onOpen }: { s: any; pct?: number; 
   return (
     <article className={"card" + (pct != null ? " sim-card" : "")} onClick={() => onOpen(s.id)} style={{ cursor: "pointer" }}>
       <div className="card-top">
-        <div className="avatar" style={{ background: avatarGrad(s.name, theme) }}>{s.name[0]?.toUpperCase()}</div>
+        <div className="avatar" style={{ background: avatarGrad(uname(s.name), theme) }}>{uname(s.name)[0]?.toUpperCase()}</div>
         <div style={{ minWidth: 0 }}>
-          <div className="c-user">@{s.name}</div>
+          <div className="c-user">{uname(s.name)}</div>
           <div className="c-id">
             {s.telegramUserId ? <>ID: {s.telegramUserId}<button className="copy-id" title="copy" onClick={(e) => copy(e, s.telegramUserId)}>⧉</button></> : <>#{s.id}</>}
           </div>

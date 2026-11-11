@@ -11,6 +11,8 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, them
 const INIT = `try{var d=document.documentElement,s=JSON.parse(localStorage.getItem('fb_settings')||'null'),rm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 if(!s){var o=localStorage.getItem('fb_theme');s={theme:o==='neon'?'neon':'frost',bg:!rm,grid:true,scan:!rm,anim:!rm,glow:true}}
 d.dataset.theme=s.theme||'frost';d.dataset.bg=s.bg===false?'off':'on';d.dataset.grid=s.grid===false?'off':'on';d.dataset.scan=s.scan===false?'off':'on';d.dataset.anim=s.anim===false?'off':'on';d.dataset.glow=s.glow===false?'off':'on';
+var n=navigator,mq=function(q){return window.matchMedia&&matchMedia(q).matches},weak=mq('(max-width: 820px)')||mq('(pointer: coarse)')||rm||(n.connection&&n.connection.saveData===true)||(n.hardwareConcurrency||8)<=2||(n.deviceMemory||8)<=2;
+d.dataset.lite=(s.liteSet?!!s.lite:(!!s.liteFps||weak))?'on':'off';
 var l=localStorage.getItem('fb_lang')||'ru';d.lang=l==='ua'?'uk':l}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {

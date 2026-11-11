@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { parseAmount, isHttpUrl } from "./http";
+import { isTgId } from "./name";
 
 /** Перетворює тіло форми адмінки в дані для Prisma. Повертає {data} або {error}. */
 export function scammerData(b: any): { data?: any; error?: string } {
@@ -11,7 +12,7 @@ export function scammerData(b: any): { data?: any; error?: string } {
   }
   if ("telegramUserId" in b) {
     const t = s(b.telegramUserId, 20);
-    if (t && !/^\d{1,19}$/.test(t)) return { error: "Telegram ID — лише цифри" };
+    if (t && !isTgId(t)) return { error: "Telegram ID — лише цифри" };
     d.telegramUserId = t ? BigInt(t) : null;
   }
   if ("description" in b) d.description = s(b.description, 4000);

@@ -35,6 +35,7 @@ export async function POST(req: Request) {
         where: { id: tid },
         data: { screenshots: shots, telegramUserId: target.telegramUserId ?? sc.telegramUserId, description: target.description || sc.description },
       }),
+      prisma.comment.updateMany({ where: { scammerId: sc.id }, data: { scammerId: tid } }),
       prisma.scammer.delete({ where: { id: sc.id } }),
     ]);
     return ok({ ok: true, mergedInto: tid });

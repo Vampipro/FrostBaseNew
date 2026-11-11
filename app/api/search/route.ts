@@ -3,6 +3,7 @@ import { ok, fail, getIp, normName } from "@/lib/http";
 import { consume, simScore } from "@/lib/guard";
 import { memLimit } from "@/lib/mem";
 import { cardInclude, toCard } from "@/lib/dto";
+import { isTgId } from "@/lib/name";
 
 export const dynamic = "force-dynamic";
 const PAGE = 24;
@@ -29,7 +30,7 @@ export async function GET(req: Request) {
     base.push({ OR: or });
   }
   const and = [...base];
-  const isNum = /^\d{1,19}$/.test(q);
+  const isNum = isTgId(q);
   if (q) {
     const or: any[] = [{ name: { contains: q, mode: "insensitive" } }];
     if (isNum) or.push({ telegramUserId: BigInt(q) });

@@ -5,6 +5,7 @@ import { Badges, avatarGrad, fmtDate } from "./ScammerCard";
 import { tr } from "@/lib/i18n";
 import Link from "next/link";
 import { safeHref } from "@/lib/url";
+import { uname } from "@/lib/name";
 
 export default function ScammerView({ id }: { id: number }) {
   const { t, lang, theme, me, toast } = useApp();
@@ -59,9 +60,9 @@ export default function ScammerView({ id }: { id: number }) {
   return (
     <div>
       <div className="modal-head">
-        <div className="avatar big" style={{ background: avatarGrad(s.name, theme) }}>{s.name[0]?.toUpperCase()}</div>
+        <div className="avatar big" style={{ background: avatarGrad(uname(s.name), theme) }}>{uname(s.name)[0]?.toUpperCase()}</div>
         <div>
-          <div className="m-user">@{s.name}</div>
+          <div className="m-user">{uname(s.name)}</div>
           <div className="m-tags"><Badges s={s} /></div>
         </div>
       </div>
@@ -90,9 +91,9 @@ export default function ScammerView({ id }: { id: number }) {
         ))}
       </div>
       <div className="modal-actions">
-        <button className="btn" onClick={() => copy("@" + s.name)}>{t("copy_user")}</button>
+        <button className="btn" onClick={() => copy(uname(s.name))}>{t("copy_user")}</button>
         {s.telegramUserId && <button className="btn ghost" onClick={() => copy(s.telegramUserId)}>{t("copy_id")}</button>}
-        {/^[A-Za-z0-9_]{3,64}$/.test(s.name) && <a className="btn ghost" href={"https://t.me/" + encodeURIComponent(s.name)} target="_blank" rel="noopener noreferrer">{t("open_tg")}</a>}
+        {/^[A-Za-z0-9_]{3,64}$/.test(uname(s.name)) && <a className="btn ghost" href={"https://t.me/" + encodeURIComponent(uname(s.name))} target="_blank" rel="noopener noreferrer">{t("open_tg")}</a>}
         {s.appealAllowed && <button className="btn ghost" onClick={() => setShowAppeal(!showAppeal)}>{t("appeal")}</button>}
         <Link className="btn ghost" href={"/s/" + s.id}>#{s.id}</Link>
       </div>

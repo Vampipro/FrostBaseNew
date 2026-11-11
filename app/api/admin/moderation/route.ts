@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { ok, fail } from "@/lib/http";
 import { requireStaff } from "@/lib/auth";
 import { cardInclude, toCard } from "@/lib/dto";
+import { isTgId } from "@/lib/name";
 
 export const dynamic = "force-dynamic";
 const PAGE = 30;
@@ -19,7 +20,7 @@ export async function GET(req: Request) {
   if (status !== "all") and.push({ moderation: status });
   if (q) {
     const or: any[] = [{ name: { contains: q, mode: "insensitive" } }];
-    if (/^\d{1,19}$/.test(q)) or.push({ telegramUserId: BigInt(q) }, { id: Number(q) <= 2147483647 ? Number(q) : -1 });
+    if (/^\d{1,19}$/.test(q)) or.push(...(isTgId(q) ? [{ telegramUserId: BigInt(q) }] : []), { id: Number(q) <= 2147483647 ? Number(q) : -1 });
     and.push({ OR: or });
   }
   const orderBy: any =

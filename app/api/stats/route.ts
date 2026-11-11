@@ -5,6 +5,9 @@ import { memo } from "@/lib/mem";
 
 export const dynamic = "force-dynamic";
 
+// службові події (напр. card_click зі старої бази) — не пошукові запити
+const NOT_EVENT = { query: { not: "card_click" } };
+
 async function compute() {
   const day = 864e5;
   const now = Date.now();
@@ -15,9 +18,9 @@ async function compute() {
       prisma.scammer.count({ where: { moderation: "pending" } }),
       prisma.submission.count(),
       prisma.scammer.aggregate({ where: vis, _sum: { viewCount: true, searchCount: true, likeCount: true, neutralCount: true, dislikeCount: true } }),
-      prisma.searchLog.count(),
-      prisma.searchLog.count({ where: { createdAt: { gt: new Date(now - day) } } }),
-      prisma.searchLog.count({ where: { createdAt: { gt: new Date(now - 7 * day) } } }),
+      prisma.searchLog.count({ where: NOT_EVENT }),
+      prisma.searchLog.count({ where: { ...NOT_EVENT, createdAt: { gt: new Date(now - day) } } }),
+      prisma.searchLog.count({ where: { ...NOT_EVENT, createdAt: { gt: new Date(now - 7 * day) } } }),
       prisma.comment.count({ where: { approved: true, hidden: false } }),
       prisma.user.count(),
       prisma.appeal.count({ where: { status: "pending" } }),
@@ -28,8 +31,8 @@ async function compute() {
       prisma.scammer.findMany({ where: vis, orderBy: { searchCount: "desc" }, take: 10, include: cardInclude }),
       prisma.scammer.findMany({ where: vis, orderBy: { viewCount: "desc" }, take: 10, include: cardInclude }),
       prisma.scammer.findMany({ where: vis, orderBy: { likeCount: "desc" }, take: 10, include: cardInclude }),
-      prisma.searchLog.groupBy({ by: ["query"], where: { createdAt: { gt: new Date(now - 30 * day) } }, _count: { _all: true }, orderBy: { _count: { query: "desc" } }, take: 15 }),
-      prisma.$queryRaw<{ d: Date; c: number }[]>`SELECT date_trunc('day', "createdAt") AS d, count(*)::int AS c FROM "SearchLog" WHERE "createdAt" > now() - interval '14 days' GROUP BY 1 ORDER BY 1`,
+      prisma.searchLog.groupBy({ by: ["query"], where: { ...NOT_EVENT, createdAt: { gt: new Date(now - 30 * day) } }, _count: { _all: true }, orderBy: { _count: { query: "desc" } }, take: 15 }),
+      prisma.$queryRaw<{ d: Date; c: number }[]>`SELECT date_trunc('day', "createdAt") AS d, count(*)::int AS c FROM "SearchLog" WHERE "createdAt" > now() - interval '14 days' AND "query" <> 'card_click' GROUP BY 1 ORDER BY 1`,
       prisma.scammer.findMany({ where: { moderation: "approved" }, orderBy: { createdAt: "desc" }, take: 8, include: cardInclude }),
       prisma.commentReport.count({ where: { status: "pending" } }),
     ]);
@@ -64,7 +67,7 @@ async function compute() {
 export async function GET(req: Request) {
   const data = await memo("stats", 60_000, compute);
   const lite = new URL(req.url).searchParams.get("lite");
-  const body = lite ? { totals: data.totals, topQueries: data.topQueries } : data;
+  const body = lite ? { totals: data.totals } : data;
   return new NextResponse(JSON.stringify(body), {
     headers: { "content-type": "application/json", "cache-control": "public, s-maxage=60, stale-while-revalidate=120" },
   });
