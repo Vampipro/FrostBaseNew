@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ok, fail, getIp, readBody, normName, parseAmount, isHttpUrl } from "@/lib/http";
 import { currentUser } from "@/lib/auth";
-import { getLimits, hit, isBanned, limited } from "@/lib/guard";
+import { consume, getLimits, isBanned } from "@/lib/guard";
 
 export async function POST(req: Request) {
   const b = await readBody(req);
@@ -34,14 +34,15 @@ export async function POST(req: Request) {
 
   const limits = await getLimits();
   const windowMs = limits.submissionsWindowHours * 3600_000;
-  if (await limited("submission", ip, limits.submissionsPerIp, windowMs))
-    return fail(`Ліміт: не більше ${limits.submissionsPerIp} заявок з одного IP за ${limits.submissionsWindowHours} год.`, 429);
 
   const dupWhere: any[] = [];
   if (username) dupWhere.push({ scammer: { name: { equals: username, mode: "insensitive" } } });
   if (tg) dupWhere.push({ scammer: { telegramUserId: BigInt(tg) } });
   const dup = await prisma.submission.findFirst({ where: { ip, createdAt: { gt: new Date(Date.now() - 24 * 3600_000) }, OR: dupWhere } });
   if (dup) return fail("Ти вже подавав заявку на цього користувача", 409);
+
+  if (!(await consume("submission", ip, limits.submissionsPerIp, windowMs)))
+    return fail(`Ліміт: не більше ${limits.submissionsPerIp} заявок з одного IP за ${limits.submissionsWindowHours} год.`, 429);
 
   const user = await currentUser();
   const now = new Date();
@@ -73,6 +74,5 @@ export async function POST(req: Request) {
     });
     return sc;
   });
-  await hit("submission", ip);
   return ok({ ok: true, id: created.id });
 }

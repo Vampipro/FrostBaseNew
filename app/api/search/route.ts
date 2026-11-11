@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ok, fail, getIp, normName } from "@/lib/http";
-import { hit, limited, simScore } from "@/lib/guard";
+import { consume, simScore } from "@/lib/guard";
+import { memLimit } from "@/lib/mem";
 import { cardInclude, toCard } from "@/lib/dto";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +10,7 @@ const PAGE = 24;
 export async function GET(req: Request) {
   const sp = new URL(req.url).searchParams;
   const ip = getIp(req);
-  if (await limited("search", ip, 60, 60_000)) return fail("Забагато запитів. Зачекай хвилину.", 429);
-  await hit("search", ip);
+  if (!memLimit("search:" + ip, 60, 60_000)) return fail("Забагато запитів. Зачекай хвилину.", 429);
 
   const q = normName((sp.get("q") || "").slice(0, 64));
   const tokens = (sp.get("statuses") || "").split(",").filter(Boolean);
@@ -52,9 +52,7 @@ export async function GET(req: Request) {
   const exactIds = rows.filter(isExact).map((r: any) => r.id);
   if (q && page === 1) {
     // не накручуємо лічильники: один і той самий запит з одного IP враховується раз на 10 хв
-    const k = "s:" + ql.slice(0, 40);
-    if (!(await limited(k, ip, 1, 10 * 60_000))) {
-      await hit(k, ip);
+    if (await consume("s:" + ql.slice(0, 40), ip, 1, 10 * 60_000)) {
       await prisma.searchLog.create({ data: { query: ql, scammerId: exactIds[0] ?? null } });
       if (exactIds.length) await prisma.scammer.updateMany({ where: { id: { in: exactIds } }, data: { searchCount: { increment: 1 } } });
     }

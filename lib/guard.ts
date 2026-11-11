@@ -12,6 +12,19 @@ export async function hit(action: string, key: string) {
     prisma.rateLimit.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 7 * 864e5) } } }).catch(() => {});
   }
 }
+/** Атомарно «витрачає» спробу: true — дозволено, false — ліміт вичерпано (без гонок між запитами). */
+export async function consume(action: string, key: string, max: number, windowMs: number): Promise<boolean> {
+  const row = await prisma.rateLimit.create({ data: { action, key } });
+  const n = await prisma.rateLimit.count({ where: { action, key, createdAt: { gt: new Date(Date.now() - windowMs) } } });
+  if (n > max) {
+    await prisma.rateLimit.delete({ where: { id: row.id } }).catch(() => {});
+    return false;
+  }
+  if (Math.random() < 0.02) {
+    prisma.rateLimit.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 7 * 864e5) } } }).catch(() => {});
+  }
+  return true;
+}
 export async function isBanned(ip: string) {
   return !!(await prisma.bannedIp.findUnique({ where: { ip } }));
 }

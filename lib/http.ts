@@ -18,6 +18,7 @@ export function getIp(req: Request): string {
 
 export async function readBody<T = any>(req: Request): Promise<T> {
   try {
+    if (Number(req.headers.get("content-length") || 0) > 200_000) return {} as T;
     return (await req.json()) as T;
   } catch {
     return {} as T;
@@ -26,8 +27,14 @@ export async function readBody<T = any>(req: Request): Promise<T> {
 
 export const toInt = (v: unknown): number | null => {
   const n = Number(v);
-  return Number.isInteger(n) && n > 0 ? n : null;
+  return Number.isInteger(n) && n > 0 && n <= 2147483647 ? n : null;
 };
+
+export function okCached(data: unknown, seconds: number) {
+  return new NextResponse(JSON.stringify(data, (_k, v) => (typeof v === "bigint" ? v.toString() : v)), {
+    headers: { "content-type": "application/json", "cache-control": `public, s-maxage=${seconds}, stale-while-revalidate=${seconds * 2}` },
+  });
+}
 
 export const isHttpUrl = (s: string) => {
   try {

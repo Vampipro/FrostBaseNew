@@ -4,6 +4,7 @@ import { api, useApp } from "./Providers";
 import { Badges, avatarGrad, fmtDate } from "./ScammerCard";
 import { tr } from "@/lib/i18n";
 import Link from "next/link";
+import { safeHref } from "@/lib/url";
 
 export default function ScammerView({ id }: { id: number }) {
   const { t, lang, theme, me, toast } = useApp();
@@ -14,7 +15,7 @@ export default function ScammerView({ id }: { id: number }) {
   const [ap, setAp] = useState({ description: "", shots: "", website: "" });
 
   const load = useCallback(async () => {
-    const r = await api("/api/scammers/" + id);
+    const r = await api("/api/scammer?id=" + id);
     if (r.error) setErr(r.error); else setS(r);
   }, [id]);
   useEffect(() => { setS(null); setErr(""); load(); }, [load]);
@@ -24,22 +25,22 @@ export default function ScammerView({ id }: { id: number }) {
 
   const copy = (v: string) => navigator.clipboard?.writeText(v).then(() => toast(t("copied")));
   const vote = async (voteType: string) => {
-    const r = await api("/api/scammers/" + id + "/vote", { body: { voteType } });
+    const r = await api("/api/vote", { body: { id, voteType } });
     if (r.error) return toast(r.error);
     setS({ ...s, myVote: r.myVote, likeCount: r.likeCount, neutralCount: r.neutralCount, dislikeCount: r.dislikeCount });
   };
   const addComment = async () => {
-    const r = await api("/api/scammers/" + id + "/comments", { body: { content: text } });
+    const r = await api("/api/comments", { body: { scammerId: id, content: text } });
     if (r.error) return toast(r.error);
     setText("");
     setS({ ...s, comments: [r, ...s.comments] });
   };
   const report = async (cid: number) => {
-    const r = await api("/api/comments/" + cid + "/report", { body: { reason: "" } });
+    const r = await api("/api/comment-report", { body: { commentId: cid, reason: "" } });
     toast(r.error || t("reported"));
   };
   const sendAppeal = async () => {
-    const r = await api("/api/scammers/" + id + "/appeal", { body: { description: ap.description, screenshots: ap.shots.split("\n").map((x) => x.trim()).filter(Boolean), website: ap.website } });
+    const r = await api("/api/appeals", { body: { scammerId: id, description: ap.description, screenshots: ap.shots.split("\n").map((x) => x.trim()).filter(Boolean), website: ap.website } });
     if (r.error) return toast(r.error);
     toast(t("appeal_sent"));
     setShowAppeal(false);
@@ -74,9 +75,9 @@ export default function ScammerView({ id }: { id: number }) {
         <>
           <h4 className="sub-title">{t("m_proofs")}</h4>
           <ul className="links">
-            {s.proofLink && <li><a href={s.proofLink} target="_blank" rel="noopener noreferrer nofollow">{t("m_proof_link")}</a></li>}
+            {s.proofLink && <li><a href={safeHref(s.proofLink)} target="_blank" rel="noopener noreferrer nofollow">{t("m_proof_link")}</a></li>}
             {s.screenshots.map((u: string, i: number) => (
-              <li key={i}><a href={u} target="_blank" rel="noopener noreferrer nofollow">#{i + 1} {u.replace(/^https?:\/\//, "").slice(0, 48)}</a></li>
+              <li key={i}><a href={safeHref(u)} target="_blank" rel="noopener noreferrer nofollow">#{i + 1} {u.replace(/^https?:\/\//, "").slice(0, 48)}</a></li>
             ))}
           </ul>
         </>
@@ -91,7 +92,7 @@ export default function ScammerView({ id }: { id: number }) {
       <div className="modal-actions">
         <button className="btn" onClick={() => copy("@" + s.name)}>{t("copy_user")}</button>
         {s.telegramUserId && <button className="btn ghost" onClick={() => copy(s.telegramUserId)}>{t("copy_id")}</button>}
-        <a className="btn ghost" href={"https://t.me/" + s.name} target="_blank" rel="noopener noreferrer">{t("open_tg")}</a>
+        {/^[A-Za-z0-9_]{3,64}$/.test(s.name) && <a className="btn ghost" href={"https://t.me/" + encodeURIComponent(s.name)} target="_blank" rel="noopener noreferrer">{t("open_tg")}</a>}
         {s.appealAllowed && <button className="btn ghost" onClick={() => setShowAppeal(!showAppeal)}>{t("appeal")}</button>}
         <Link className="btn ghost" href={"/s/" + s.id}>#{s.id}</Link>
       </div>

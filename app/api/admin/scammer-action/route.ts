@@ -2,10 +2,10 @@ import { prisma } from "@/lib/db";
 import { ok, fail, readBody, toInt } from "@/lib/http";
 import { requireStaff } from "@/lib/auth";
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request) {
   if (!(await requireStaff())) return fail("Немає доступу", 403);
-  const id = toInt((await params).id);
-  const { action, targetId, reason } = await readBody(req);
+  const { id: rawId, action, targetId, reason } = await readBody(req);
+  const id = toInt(rawId);
   const sc = id ? await prisma.scammer.findUnique({ where: { id } }) : null;
   if (!sc) return fail("Не знайдено", 404);
 

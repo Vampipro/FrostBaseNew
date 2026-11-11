@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, useApp } from "../Providers";
 import { Badges, fmtDate } from "../ScammerCard";
 import Modal from "../Modal";
+import { safeHref } from "@/lib/url";
 
 const EMPTY = { name: "", telegramUserId: "", description: "", typeId: "", statusIds: [] as number[], scamAmount: "", scamCurrency: "", scamDate: "", proofLink: "", screenshots: "", moderation: "approved", appealsDisabled: false, likeCount: 0, neutralCount: 0, dislikeCount: 0, viewCount: 0, searchCount: 0 };
 
@@ -22,7 +23,7 @@ function Editor({ item, statuses, types, onClose, onSaved }: { item: any | null;
       screenshots: f.screenshots.split("\n").map((x: string) => x.trim()).filter(Boolean), moderation: f.moderation, appealsDisabled: f.appealsDisabled,
       likeCount: Number(f.likeCount), neutralCount: Number(f.neutralCount), dislikeCount: Number(f.dislikeCount), viewCount: Number(f.viewCount), searchCount: Number(f.searchCount),
     };
-    const r = item ? await api("/api/admin/scammers/" + item.id, { method: "PATCH", body }) : await api("/api/admin/scammers", { body });
+    const r = item ? await api("/api/admin/scammers", { method: "PATCH", body: { ...body, id: item.id } }) : await api("/api/admin/scammers", { body });
     if (r.error) return toast(r.error);
     toast("Збережено");
     onSaved();
@@ -88,19 +89,19 @@ export default function Moderation() {
   }, [status, sort, dir, q, page]);
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
-    api("/api/admin/dict/statuses").then((r) => Array.isArray(r) && setStatuses(r));
-    api("/api/admin/dict/types").then((r) => Array.isArray(r) && setTypes(r));
+    api("/api/admin/dict?kind=statuses").then((r) => Array.isArray(r) && setStatuses(r));
+    api("/api/admin/dict?kind=types").then((r) => Array.isArray(r) && setTypes(r));
   }, []);
 
   const act = async (id: number, action: string, extra: any = {}) => {
-    const r = await api(`/api/admin/scammers/${id}/action`, { body: { action, ...extra } });
+    const r = await api("/api/admin/scammer-action", { body: { id, action, ...extra } });
     if (r.error) return toast(r.error);
     toast("Готово");
     load();
   };
   const del = async (id: number) => {
     if (!confirm(`Видалити запис #${id} остаточно?`)) return;
-    await api("/api/admin/scammers/" + id, { method: "DELETE" });
+    await api("/api/admin/scammers?id=" + id, { method: "DELETE" });
     load();
   };
   const ban = async (ip: string) => {
@@ -143,7 +144,7 @@ export default function Moderation() {
                 </div>
               )}
               {s.description && <p className="desc">{s.description}</p>}
-              {s.screenshots.length > 0 && <ul className="links">{s.screenshots.map((u: string, i: number) => <li key={i}><a href={u} target="_blank" rel="noopener noreferrer nofollow">{u.slice(0, 70)}</a></li>)}</ul>}
+              {s.screenshots.length > 0 && <ul className="links">{s.screenshots.map((u: string, i: number) => <li key={i}><a href={safeHref(u)} target="_blank" rel="noopener noreferrer nofollow">{u.slice(0, 70)}</a></li>)}</ul>}
               {s.submissions.map((x: any) => (
                 <div className="c-date" key={x.id}>жалоба #{x.id} · IP {x.ip || "—"} {x.ip && <button className="link-btn" onClick={() => ban(x.ip)}>бан IP</button>}{x.contactUsername && <> · зв'язок: @{x.contactUsername}</>}</div>
               ))}

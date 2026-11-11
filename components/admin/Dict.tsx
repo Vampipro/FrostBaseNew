@@ -13,14 +13,14 @@ function Row({ kind, row, onDone }: { kind: string; row: any; onDone: () => void
   const save = async () => {
     const body: any = { key: f.key, label: f.label, translations: f.translations, sortOrder: Number(f.sortOrder), hidden: f.hidden };
     if (kind === "statuses") Object.assign(body, { description: f.description, color: f.color, textColor: f.textColor, showInForm: f.showInForm });
-    const r = isNew ? await api(`/api/admin/dict/${kind}`, { body }) : await api(`/api/admin/dict/${kind}/${row.id}`, { method: "PATCH", body });
+    const r = isNew ? await api("/api/admin/dict", { body: { ...body, kind } }) : await api("/api/admin/dict", { method: "PATCH", body: { ...body, kind, id: row.id } });
     if (r.error) return toast(r.error);
     toast("Збережено");
     onDone();
   };
   const del = async () => {
     if (!confirm("Видалити? Для тегів зв'язки зі скамерами теж зникнуть. Краще сховати.")) return;
-    await api(`/api/admin/dict/${kind}/${row.id}`, { method: "DELETE" });
+    await api(`/api/admin/dict?kind=${kind}&id=${row.id}`, { method: "DELETE" });
     onDone();
   };
   return (
@@ -55,7 +55,7 @@ function Row({ kind, row, onDone }: { kind: string; row: any; onDone: () => void
 export default function Dict({ kind }: { kind: "statuses" | "types" }) {
   const [rows, setRows] = useState<any[] | null>(null);
   const [n, setN] = useState(0);
-  const load = useCallback(async () => { const r = await api(`/api/admin/dict/${kind}`); setRows(Array.isArray(r) ? r : []); setN((x) => x + 1); }, [kind]);
+  const load = useCallback(async () => { const r = await api(`/api/admin/dict?kind=${kind}`); setRows(Array.isArray(r) ? r : []); setN((x) => x + 1); }, [kind]);
   useEffect(() => { load(); }, [load]);
   if (!rows) return <div className="empty-sub">Завантаження…</div>;
   return (

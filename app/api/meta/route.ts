@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { ok } from "@/lib/http";
+import { okCached } from "@/lib/http";
 import { getSetting, getLimits } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
@@ -12,5 +12,5 @@ export async function GET() {
     getSetting<boolean>("appeals_enabled", true),
     getLimits(),
   ]);
-  return ok({ statuses, types, instruction, appealsEnabled, limits });
+  return okCached({ statuses, types, instruction, appealsEnabled, limits }, 15);
 }

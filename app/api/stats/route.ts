@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { cardInclude, toCard } from "@/lib/dto";
+import { memo } from "@/lib/mem";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+async function compute() {
   const day = 864e5;
   const now = Date.now();
   const vis = { moderation: { in: ["approved", "pending"] } };
@@ -49,10 +50,22 @@ export async function GET() {
     topViewed: topViewed.map(toCard),
     topLiked: topLiked.map(toCard),
     topQueries: topQueriesRaw.map((r) => ({ query: r.query, count: r._count._all })),
-    perDay: perDay.map((r) => ({ day: r.d, count: Number(r.c) })),
+    perDay: Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(now - (13 - i) * day);
+      const key = d.toISOString().slice(0, 10);
+      const hit = perDay.find((r) => new Date(r.d).toISOString().slice(0, 10) === key);
+      return { day: key, count: hit ? Number(hit.c) : 0 };
+    }),
     latest: latest.map(toCard),
   };
-  return new NextResponse(JSON.stringify(data), {
-    headers: { "content-type": "application/json", "cache-control": "s-maxage=60, stale-while-revalidate=120" },
+  return data;
+}
+
+export async function GET(req: Request) {
+  const data = await memo("stats", 60_000, compute);
+  const lite = new URL(req.url).searchParams.get("lite");
+  const body = lite ? { totals: data.totals, topQueries: data.topQueries } : data;
+  return new NextResponse(JSON.stringify(body), {
+    headers: { "content-type": "application/json", "cache-control": "public, s-maxage=60, stale-while-revalidate=120" },
   });
 }

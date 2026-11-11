@@ -63,8 +63,11 @@ model Scammer {
 
   @@index([name])
   @@index([telegramUserId])
-  @@index([moderation])
+  @@index([moderation, createdAt])
   @@index([typeId])
+  @@index([searchCount])
+  @@index([viewCount])
+  @@index([likeCount])
 }
 
 model ScammerNameHistory {
@@ -142,6 +145,7 @@ model Submission {
   @@index([scammerId])
   @@index([status])
   @@index([ip, createdAt])
+  @@index([createdAt])
 }
 
 // ---------- Взаємодії ----------

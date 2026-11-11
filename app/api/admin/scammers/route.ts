@@ -1,43 +1,45 @@
 import { prisma } from "@/lib/db";
 import { ok, fail, readBody, toInt } from "@/lib/http";
 import { requireStaff } from "@/lib/auth";
+import { replaceStatuses, scammerData } from "@/lib/admin-scammer";
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: Request) {
   if (!(await requireStaff())) return fail("Немає доступу", 403);
-  const id = toInt((await params).id);
-  const { action, targetId, reason } = await readBody(req);
-  const sc = id ? await prisma.scammer.findUnique({ where: { id } }) : null;
-  if (!sc) return fail("Не знайдено", 404);
+  const b = await readBody(req);
+  const { data, error } = scammerData({ moderation: "approved", ...b });
+  if (error || !data) return fail(error || "Помилка");
+  if (!data.name) return fail("Вкажи ім'я");
+  const sc = await prisma.scammer.create({ data });
+  await replaceStatuses(sc.id, Array.isArray(b.statusIds) ? b.statusIds : []);
+  return ok({ id: sc.id });
+}
 
-  if (action === "approve") {
-    await prisma.$transaction([
-      prisma.scammer.update({ where: { id: sc.id }, data: { moderation: "approved" } }),
-      prisma.submission.updateMany({ where: { scammerId: sc.id, status: { in: ["pending", "revision"] } }, data: { status: "approved" } }),
-    ]);
-    return ok({ ok: true });
+export async function PATCH(req: Request) {
+  if (!(await requireStaff())) return fail("Немає доступу", 403);
+  const b = await readBody(req);
+  const id = toInt(b.id);
+  if (!id) return fail("Не знайдено", 404);
+  const { data, error } = scammerData(b);
+  if (error || !data) return fail(error || "Помилка");
+  const old = await prisma.scammer.findUnique({ where: { id }, select: { name: true } });
+  if (!old) return fail("Не знайдено", 404);
+  if (data.name && data.name !== old.name) await prisma.scammerNameHistory.create({ data: { scammerId: id, oldName: old.name, newName: data.name } });
+  await prisma.scammer.update({ where: { id }, data });
+  if (Array.isArray(b.statusIds)) await replaceStatuses(id, b.statusIds);
+  // змінили модерацію в редакторі — синхронізуємо жалоби цього запису
+  if (data.moderation === "approved" || data.moderation === "rejected") {
+    await prisma.submission.updateMany({
+      where: { scammerId: id, status: { in: ["pending", "revision"] } },
+      data: { status: data.moderation },
+    });
   }
-  if (action === "reject") {
-    await prisma.$transaction([
-      prisma.scammer.update({ where: { id: sc.id }, data: { moderation: "rejected" } }),
-      prisma.submission.updateMany({ where: { scammerId: sc.id, status: { in: ["pending", "revision"] } }, data: { status: "rejected", revisionReason: String(reason ?? "").slice(0, 300) } }),
-    ]);
-    return ok({ ok: true });
-  }
-  if (action === "merge") {
-    const tid = toInt(targetId);
-    if (!tid || tid === sc.id) return fail("Вкажи коректний ID запису, з яким об'єднати");
-    const target = await prisma.scammer.findUnique({ where: { id: tid } });
-    if (!target) return fail("Цільовий запис не знайдено", 404);
-    const shots = [...new Set([...target.screenshots, ...sc.screenshots])];
-    await prisma.$transaction([
-      prisma.submission.updateMany({ where: { scammerId: sc.id }, data: { scammerId: tid, status: "approved" } }),
-      prisma.scammer.update({
-        where: { id: tid },
-        data: { screenshots: shots, telegramUserId: target.telegramUserId ?? sc.telegramUserId, description: target.description || sc.description },
-      }),
-      prisma.scammer.delete({ where: { id: sc.id } }),
-    ]);
-    return ok({ ok: true, mergedInto: tid });
-  }
-  return fail("Невідома дія");
+  return ok({ ok: true });
+}
+
+export async function DELETE(req: Request) {
+  if (!(await requireStaff())) return fail("Немає доступу", 403);
+  const id = toInt(new URL(req.url).searchParams.get("id"));
+  if (!id) return fail("Не знайдено", 404);
+  await prisma.scammer.delete({ where: { id } }).catch(() => {});
+  return ok({ ok: true });
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api, useApp } from "../Providers";
 import { fmtDate } from "../ScammerCard";
+import { safeHref } from "@/lib/url";
 
 export function Comments() {
   const { toast, lang } = useApp();
@@ -14,8 +15,8 @@ export function Comments() {
     setPending(Array.isArray(b) ? b : []);
   }, []);
   useEffect(() => { load(); }, [load]);
-  const rep = async (id: number, action: string) => { const r = await api("/api/admin/comment-reports/" + id, { method: "PATCH", body: { action } }); toast(r.error || "Готово"); load(); };
-  const cm = async (id: number, body: any) => { await api("/api/admin/comments/" + id, { method: "PATCH", body }); load(); };
+  const rep = async (id: number, action: string) => { const r = await api("/api/admin/comment-reports", { method: "PATCH", body: { id, action } }); toast(r.error || "Готово"); load(); };
+  const cm = async (id: number, body: any) => { await api("/api/admin/comments", { method: "PATCH", body: { ...body, id } }); load(); };
   return (
     <div>
       <h3 className="sub-title" style={{ marginTop: 0 }}>Скарги на коментарі ({reports.length})</h3>
@@ -52,7 +53,7 @@ export function Appeals() {
   const [rows, setRows] = useState<any[]>([]);
   const load = useCallback(async () => { const r = await api("/api/admin/appeals?status=" + status); setRows(Array.isArray(r) ? r : []); }, [status]);
   useEffect(() => { load(); }, [load]);
-  const set = async (id: number, s: string) => { const r = await api("/api/admin/appeals/" + id, { method: "PATCH", body: { status: s } }); toast(r.error || "Готово"); load(); };
+  const set = async (id: number, s: string) => { const r = await api("/api/admin/appeals", { method: "PATCH", body: { id, status: s } }); toast(r.error || "Готово"); load(); };
   return (
     <div>
       <div className="toolbar">
@@ -65,7 +66,7 @@ export function Appeals() {
         <div className="panel admin-item" key={a.id}>
           <div className="admin-head"><b>Апеляція #{a.id}</b><Link className="link-btn" href={"/s/" + a.scammer.id} target="_blank">@{a.scammer.name} (#{a.scammer.id})</Link><span className="c-date">{fmtDate(a.createdAt, lang)} · {a.user?.username ?? "гість"} · IP {a.ip || "—"} · {a.status}</span></div>
           <p className="desc">{a.description}</p>
-          {a.screenshots.length > 0 && <ul className="links">{a.screenshots.map((u: string, i: number) => <li key={i}><a href={u} target="_blank" rel="noopener noreferrer nofollow">{u.slice(0, 70)}</a></li>)}</ul>}
+          {a.screenshots.length > 0 && <ul className="links">{a.screenshots.map((u: string, i: number) => <li key={i}><a href={safeHref(u)} target="_blank" rel="noopener noreferrer nofollow">{u.slice(0, 70)}</a></li>)}</ul>}
           <div className="modal-actions">
             <button className="btn" onClick={() => set(a.id, "accepted")}>Прийняти</button>
             <button className="btn ghost" onClick={() => set(a.id, "rejected")}>Відхилити</button>
@@ -107,7 +108,7 @@ export function UsersTab({ isAdmin }: { isAdmin: boolean }) {
   const load = useCallback(async () => { const r = await api("/api/admin/users?q=" + encodeURIComponent(q)); setRows(Array.isArray(r) ? r : []); }, [q]);
   useEffect(() => { if (isAdmin) load(); }, [load, isAdmin]);
   if (!isAdmin) return <div className="empty-sub">Лише для адміна</div>;
-  const patch = async (id: number, body: any) => { const r = await api("/api/admin/users/" + id, { method: "PATCH", body }); toast(r.error || "Готово"); load(); };
+  const patch = async (id: number, body: any) => { const r = await api("/api/admin/users", { method: "PATCH", body: { ...body, id } }); toast(r.error || "Готово"); load(); };
   return (
     <div>
       <div className="toolbar"><input placeholder="Пошук користувача" value={q} onChange={(e) => setQ(e.target.value)} /></div>
