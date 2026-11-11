@@ -1,25 +1,28 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, useApp } from "./Providers";
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
-  const { t, refreshMe, toast } = useApp();
+  const { t, refreshMe, toast, me } = useApp();
   const router = useRouter();
   const [u, setU] = useState("");
   const [p, setP] = useState("");
   const [busy, setBusy] = useState(false);
   const isLogin = mode === "login";
 
+  // уже залогінений — форма не потрібна, одразу на головну
+  useEffect(() => { if (me) router.replace("/"); }, [me, router]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     const r = await api("/api/auth/" + mode, { body: { username: u, password: p } });
-    setBusy(false);
-    if (r.error) return toast(r.error);
+    if (r.error) { setBusy(false); return toast(r.error); }
     await refreshMe();
-    router.push("/");
+    // повне перезавантаження надійніше за router.push: сесійна кука вже встановлена, стан чистий
+    window.location.assign("/");
   };
   return (
     <main className="page">
