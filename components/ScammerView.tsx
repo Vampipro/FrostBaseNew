@@ -5,7 +5,7 @@ import { Badges, avatarGrad, fmtDate } from "./ScammerCard";
 import { tr } from "@/lib/i18n";
 import Link from "next/link";
 import { safeHref } from "@/lib/url";
-import { uname } from "@/lib/name";
+import { uname, pickDesc } from "@/lib/name";
 
 export default function ScammerView({ id }: { id: number }) {
   const { t, lang, theme, me, toast } = useApp();
@@ -24,6 +24,7 @@ export default function ScammerView({ id }: { id: number }) {
   if (err) return <div className="empty-sub">{t("not_found")}</div>;
   if (!s) return <div className="empty-sub">{t("loading")}</div>;
 
+  const desc = pickDesc(s, lang);
   const copy = (v: string) => navigator.clipboard?.writeText(v).then(() => toast(t("copied")));
   const vote = async (voteType: string) => {
     const r = await api("/api/vote", { body: { id, voteType } });
@@ -51,7 +52,9 @@ export default function ScammerView({ id }: { id: number }) {
   const cells: [string, string | number][] = [
     [t("m_id"), s.telegramUserId ?? "—"],
     [t("m_type"), s.type ? tr(s.type, lang) : "—"],
-    [t("m_amount"), s.scamAmount ? `${Number(s.scamAmount)} ${s.scamCurrency}` : "—"],
+    ...((s.botCheck
+      ? [[t("m_reward"), s.botReward || "—"], [t("m_sponsors"), s.botSponsors ?? "—"], [t("m_usage"), s.botUsage || "—"]]
+      : [[t("m_amount"), s.scamAmount ? `${Number(s.scamAmount)} ${s.scamCurrency}` : "—"]]) as [string, string | number][]),
     [t("m_date"), s.scamDate ? fmtDate(s.scamDate, lang) : fmtDate(s.submittedAt ?? s.createdAt, lang)],
     [t("m_complaints"), s.complaints],
     [t("m_views"), s.viewCount],
@@ -71,7 +74,7 @@ export default function ScammerView({ id }: { id: number }) {
           <div className="m-cell" key={k}><div className="m-k">{k}</div><div className="m-v">{v}</div></div>
         ))}
       </div>
-      {s.description && <><h4 className="sub-title">{t("m_desc")}</h4><p className="desc">{s.description}</p></>}
+      {desc && <><h4 className="sub-title">{t("m_desc")}</h4><p className="desc">{desc}</p></>}
       {(s.screenshots.length > 0 || s.proofLink) && (
         <>
           <h4 className="sub-title">{t("m_proofs")}</h4>

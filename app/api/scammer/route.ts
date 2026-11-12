@@ -31,6 +31,7 @@ export async function GET(req: Request) {
   return ok({
     ...toCard(s),
     description: s.description,
+    descriptionI18n: s.descriptionI18n ?? {},
     screenshots: s.screenshots,
     proofLink: s.proofLink,
     scamDate: s.scamDate,

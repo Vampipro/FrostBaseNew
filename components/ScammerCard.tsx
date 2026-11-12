@@ -17,6 +17,7 @@ export function Badges({ s }: { s: any }) {
   const { t, lang } = useApp();
   return (
     <>
+      {s.botCheck && <span className="st-badge st-bot">🤖 {t("bot_check")}</span>}
       {s.moderation === "pending" && (
         <span className="st-badge st-pending" title={fmtDate(s.submittedAt ?? s.createdAt, lang)}>{t("pending_status")}</span>
       )}
@@ -51,6 +52,13 @@ export default function ScammerCard({ s, pct, onOpen }: { s: any; pct?: number; 
         <Badges s={s} />
         {s.type && <span className="mini-tag">{tr(s.type, lang)}</span>}
       </div>
+      {s.botCheck && (
+        <div className="c-bot">
+          {s.botReward && <span title={t("m_reward")}>🎁 {s.botReward}</span>}
+          {s.botSponsors != null && <span title={t("m_sponsors")}>🤝 {s.botSponsors}</span>}
+          {s.botUsage && <span title={t("m_usage")}>👥 {s.botUsage}</span>}
+        </div>
+      )}
       {s.moderation === "pending" && <div className="c-date" style={{ marginTop: 8 }}>{t("pending_since")} {fmtDate(s.submittedAt ?? s.createdAt, lang)}</div>}
       <div className="c-foot">
         <span className="c-price">👍 {s.likeCount} · 👎 {s.dislikeCount}</span>

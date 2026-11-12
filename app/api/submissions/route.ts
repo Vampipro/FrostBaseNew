@@ -3,6 +3,7 @@ import { ok, fail, getIp, readBody, normName, parseAmount, isHttpUrl } from "@/l
 import { currentUser } from "@/lib/auth";
 import { consume, getLimits, isBanned } from "@/lib/guard";
 import { isTgId } from "@/lib/name";
+import { clean } from "@/lib/name";
 
 export async function POST(req: Request) {
   const b = await readBody(req);
@@ -10,19 +11,21 @@ export async function POST(req: Request) {
   const ip = getIp(req);
   if (await isBanned(ip)) return fail("Доступ заборонено", 403);
 
-  const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+  const str = (v: unknown, max: number) => (typeof v === "string" ? clean(v, max) : "");
+  const isBot = b.kind === "bot"; // запит на перевірку бота
   const username = normName(str(b.username, 64));
-  const tg = str(b.telegramId, 20).replace(/\s/g, "");
+  const tg = isBot ? "" : str(b.telegramId, 20).replace(/\s/g, "");
+  if (isBot && !username) return fail("Вкажіть юзернейм бота");
   if (!username && !tg) return fail("Вкажи юзернейм або Telegram ID");
   if (tg && !isTgId(tg)) return fail("Telegram ID має складатися лише з цифр");
   if (username && !/^[A-Za-z0-9_]{3,64}$/.test(username)) return fail("Юзернейм: латиниця, цифри та _ (мін. 3 символи)");
 
   const statusId = Number(b.statusId);
   const status = Number.isInteger(statusId) ? await prisma.scammerStatus.findUnique({ where: { id: statusId } }) : null;
-  if (!status || status.hidden || !status.showInForm) return fail("Обери тег зі списку");
+  if (!isBot && (!status || status.hidden || !status.showInForm)) return fail("Обери тег зі списку");
 
   const shots: string[] = Array.isArray(b.screenshots) ? b.screenshots.map((s: any) => String(s).trim()).filter(Boolean) : [];
-  if (shots.length < 1) return fail("Додай хоча б одне посилання на скріншот");
+  if (!isBot && shots.length < 1) return fail("Додай хоча б одне посилання на скріншот");
   if (shots.length > 10 || shots.some((s) => s.length > 500 || !isHttpUrl(s))) return fail("Скріншоти: до 10 коректних посилань http(s)");
 
   const wantContact = b.wantContact === true;
@@ -32,6 +35,21 @@ export async function POST(req: Request) {
   const amountRaw = str(b.scamAmount, 24);
   const amount = parseAmount(amountRaw);
   if (amountRaw && amount === null) return fail("Сума має бути числом");
+
+  const botReward = str(b.botReward, 80);
+  const sponsorsRaw = str(b.botSponsors, 6);
+  const botUsage = str(b.botUsage, 60);
+  if (isBot) {
+    if (!botReward) return fail("Вкажіть нагороду");
+    if (!/^\d{1,5}$/.test(sponsorsRaw)) return fail("Кількість спонсорів: ціле число");
+    if (!botUsage) return fail("Вкажіть приблизне використання бота");
+    const exists = await prisma.scammer.findFirst({
+      where: { botCheck: true, moderation: { in: ["pending", "approved"] }, name: { equals: username, mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (exists) return fail("Цей бот уже поданий на перевірку", 409);
+  }
+  const botType = isBot ? await prisma.scammerType.findUnique({ where: { key: "bot" } }) : null;
 
   const limits = await getLimits();
   const windowMs = limits.submissionsWindowHours * 3600_000;
@@ -58,7 +76,8 @@ export async function POST(req: Request) {
         scamAmount: amount,
         scamCurrency: str(b.scamCurrency, 24),
         screenshots: shots,
-        statuses: { create: [{ statusId: status.id }] },
+        statuses: { create: !isBot && status ? [{ statusId: status.id }] : [] },
+        ...(isBot ? { botCheck: true, botReward, botSponsors: Number(sponsorsRaw), botUsage, typeId: botType?.id ?? null } : {}),
       },
     });
     await tx.submission.create({

@@ -15,11 +15,12 @@ export async function GET(req: Request) {
 
   const q = normName((sp.get("q") || "").slice(0, 64));
   const tokens = (sp.get("statuses") || "").split(",").filter(Boolean);
-  const statusIds = tokens.map(Number).filter((n) => Number.isInteger(n) && n > 0);
+  const statusIds = tokens.map(Number).filter((n) => Number.isInteger(n) && n > 0 && n <= 2147483647).slice(0, 50);
   const wantPending = tokens.includes("pending");
-  const typeId = Number(sp.get("type")) || undefined;
+  const typeRaw = Number(sp.get("type"));
+  const typeId = Number.isInteger(typeRaw) && typeRaw > 0 && typeRaw <= 2147483647 ? typeRaw : undefined;
   const sort = sp.get("sort") || "rel";
-  const page = Math.max(1, Number(sp.get("page")) || 1);
+  const page = Math.min(50, Math.max(1, Math.trunc(Number(sp.get("page"))) || 1));
 
   const base: any[] = [{ moderation: { in: ["approved", "pending"] } }];
   if (typeId) base.push({ typeId });
@@ -51,7 +52,7 @@ export async function GET(req: Request) {
   });
 
   const exactIds = rows.filter(isExact).map((r: any) => r.id);
-  if (q && page === 1) {
+  if (q && page === 1 && /^[A-Za-z0-9_]{3,40}$/.test(q)) {
     // не накручуємо лічильники: один і той самий запит з одного IP враховується раз на 10 хв
     if (await consume("s:" + ql.slice(0, 40), ip, 1, 10 * 60_000)) {
       await prisma.searchLog.create({ data: { query: ql, scammerId: exactIds[0] ?? null } });
@@ -65,7 +66,7 @@ export async function GET(req: Request) {
     const cand = await prisma.scammer.findMany({
       where: { AND: [...base, { OR: [{ name: { startsWith: q.slice(0, 2), mode: "insensitive" } }, { name: { contains: q.slice(0, 3), mode: "insensitive" } }] }] },
       include: cardInclude,
-      take: 400,
+      take: 200,
     });
     similar = cand
       .filter((c: any) => !direct.has(c.id))

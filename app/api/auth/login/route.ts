@@ -12,7 +12,12 @@ export async function POST(req: Request) {
   if (await isBanned(ip)) return fail("Доступ заборонено", 403);
   const { username, password } = await readBody(req);
   if (typeof username !== "string" || typeof password !== "string" || username.length > 40 || password.length > 100) return fail("Невірний логін або пароль", 401);
-  if (!(await consume("login", ip, 10, 15 * 60_000)) || !(await consume("login-u", username.trim().toLowerCase(), 10, 15 * 60_000)))
+  const uKey = username.trim().toLowerCase() + "|" + ip;
+  // спроба записується ДО перевірки пароля — паралельні запити не обходять ліміт.
+  // Окремий ключ «логін+IP»: чужий IP не може заблокувати акаунт жертви.
+  const name = username.trim().toLowerCase();
+  const W = 15 * 60_000;
+  if (!(await consume("login", ip, 20, W)) || !(await consume("login-u", uKey, 5, W)) || !(await consume("login-g", name, 300, 3600_000)))
     return fail("Забагато спроб входу. Зачекай 15 хвилин.", 429);
   const user = await prisma.user.findFirst({ where: { username: { equals: username.trim(), mode: "insensitive" } } });
   let valid = false;
@@ -21,7 +26,10 @@ export async function POST(req: Request) {
   } catch {
     valid = false;
   }
-  if (!user || !valid || !user.password.startsWith("$2")) return fail("Невірний логін або пароль", 401);
+  if (!user || !valid || !user.password.startsWith("$2")) {
+    return fail("Невірний логін або пароль", 401);
+  }
+  await prisma.rateLimit.deleteMany({ where: { action: "login-u", key: uKey } }); // успішний вхід скидає лічильник
   if (user.banReason) return fail("Акаунт заблоковано: " + user.banReason, 403);
   await createSession(user.id);
   return ok({ user: { id: user.id, username: user.username, role: user.role } });

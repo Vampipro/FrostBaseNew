@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { ok, fail, getIp, readBody, toInt } from "@/lib/http";
 import { currentUser } from "@/lib/auth";
 import { consume, isBanned } from "@/lib/guard";
+import { clean } from "@/lib/name";
 
 export async function POST(req: Request) {
   const { commentId: raw, reason } = await readBody(req);
@@ -16,7 +17,7 @@ export async function POST(req: Request) {
   if (!(await consume("report", ip, 10, 3600_000))) return fail("Забагато скарг. Спробуй пізніше.", 429);
   const user = await currentUser();
   await prisma.commentReport.create({
-    data: { commentId, ip, reporterId: user?.id ?? null, reason: typeof reason === "string" ? reason.trim().slice(0, 300) : "" },
+    data: { commentId, ip, reporterId: user?.id ?? null, reason: typeof reason === "string" ? clean(reason, 300) : "" },
   });
   return ok({ ok: true });
 }

@@ -4,22 +4,24 @@ import { api, useApp } from "../Providers";
 import { Badges, fmtDate } from "../ScammerCard";
 import Modal from "../Modal";
 import { safeHref } from "@/lib/url";
-import { uname } from "@/lib/name";
+import { uname, pickDesc } from "@/lib/name";
 
-const EMPTY = { name: "", telegramUserId: "", description: "", typeId: "", statusIds: [] as number[], scamAmount: "", scamCurrency: "", scamDate: "", proofLink: "", screenshots: "", moderation: "approved", appealsDisabled: false, likeCount: 0, neutralCount: 0, dislikeCount: 0, viewCount: 0, searchCount: 0 };
+const EMPTY = { name: "", telegramUserId: "", description: "", typeId: "", statusIds: [] as number[], scamAmount: "", scamCurrency: "", scamDate: "", proofLink: "", screenshots: "", moderation: "approved", appealsDisabled: false, descUa: "", descEn: "", botCheck: false, botReward: "", botSponsors: "", botUsage: "", likeCount: 0, neutralCount: 0, dislikeCount: 0, viewCount: 0, searchCount: 0 };
 
 function Editor({ item, statuses, types, onClose, onSaved }: { item: any | null; statuses: any[]; types: any[]; onClose: () => void; onSaved: () => void }) {
   const { toast } = useApp();
   const [f, setF] = useState<any>(() =>
-    item ? { ...EMPTY, ...item, telegramUserId: item.telegramUserId ?? "", typeId: item.typeId ?? "", scamAmount: item.scamAmount ?? "", scamDate: item.scamDate ? String(item.scamDate).slice(0, 10) : "", screenshots: (item.screenshots || []).join("\n") } : { ...EMPTY }
+    item ? { ...EMPTY, ...item, descUa: item.descriptionI18n?.ua ?? "", descEn: item.descriptionI18n?.en ?? "", botSponsors: item.botSponsors ?? "", telegramUserId: item.telegramUserId ?? "", typeId: item.typeId ?? "", scamAmount: item.scamAmount ?? "", scamDate: item.scamDate ? String(item.scamDate).slice(0, 10) : "", screenshots: (item.screenshots || []).join("\n") } : { ...EMPTY }
   );
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
+  // «Кілька мов» — необов'язково. Без галочки опис тільки російською (за замовчуванням)
+  const [multi, setMulti] = useState<boolean>(() => !!(item?.descriptionI18n?.ua || item?.descriptionI18n?.en));
   const num = (k: string, label: string) => (
     <label className="field"><span>{label}</span><input type="number" min={0} value={f[k]} onChange={(e) => set(k, e.target.value)} /></label>
   );
   const save = async () => {
     const body = {
-      name: f.name, telegramUserId: String(f.telegramUserId), description: f.description, typeId: f.typeId || null, statusIds: f.statusIds,
+      name: f.name, telegramUserId: String(f.telegramUserId), description: f.description, descriptionI18n: multi ? { ua: f.descUa, en: f.descEn } : {}, botCheck: !!f.botCheck, botReward: f.botReward, botSponsors: String(f.botSponsors), botUsage: f.botUsage, typeId: f.typeId || null, statusIds: f.statusIds,
       scamAmount: String(f.scamAmount), scamCurrency: f.scamCurrency, scamDate: f.scamDate, proofLink: f.proofLink,
       screenshots: f.screenshots.split("\n").map((x: string) => x.trim()).filter(Boolean), moderation: f.moderation, appealsDisabled: f.appealsDisabled,
       likeCount: Number(f.likeCount), neutralCount: Number(f.neutralCount), dislikeCount: Number(f.dislikeCount), viewCount: Number(f.viewCount), searchCount: Number(f.searchCount),
@@ -53,7 +55,22 @@ function Editor({ item, statuses, types, onClose, onSaved }: { item: any | null;
             <select value={f.moderation} onChange={(e) => set("moderation", e.target.value)}><option value="pending">На модерації</option><option value="approved">Прийнято</option><option value="rejected">Відхилено</option></select>
           </label>
         </div>
-        <label className="field"><span>Опис</span><textarea rows={3} value={f.description} onChange={(e) => set("description", e.target.value)} /></label>
+        <label className="check"><input type="checkbox" checked={multi} onChange={(e) => setMulti(e.target.checked)} /> Описи кількома мовами (необов'язково; без галочки — лише російською)</label>
+        <label className="field"><span>{multi ? "Опис (RU)" : "Опис (RU, за замовчуванням)"}</span><textarea rows={3} value={f.description} onChange={(e) => set("description", e.target.value)} /></label>
+        {multi && (
+          <>
+            <label className="field"><span>Опис (UA)</span><textarea rows={3} value={f.descUa} onChange={(e) => set("descUa", e.target.value)} placeholder="Якщо порожньо — показується російський" /></label>
+            <label className="field"><span>Опис (EN)</span><textarea rows={3} value={f.descEn} onChange={(e) => set("descEn", e.target.value)} placeholder="If empty, the Russian text is shown" /></label>
+          </>
+        )}
+        <label className="check"><input type="checkbox" checked={!!f.botCheck} onChange={(e) => set("botCheck", e.target.checked)} /> Перевірка бота (показувати нагороду, спонсорів і використання)</label>
+        {f.botCheck && (
+          <div className="row3">
+            <label className="field"><span>Нагорода</span><input value={f.botReward} maxLength={80} onChange={(e) => set("botReward", e.target.value)} /></label>
+            <label className="field"><span>Спонсорів</span><input value={f.botSponsors} inputMode="numeric" maxLength={5} onChange={(e) => set("botSponsors", e.target.value.replace(/\D/g, ""))} /></label>
+            <label className="field"><span>Використання</span><input value={f.botUsage} maxLength={60} onChange={(e) => set("botUsage", e.target.value)} /></label>
+          </div>
+        )}
         <div className="row3">
           <label className="field"><span>Сума</span><input value={f.scamAmount} onChange={(e) => set("scamAmount", e.target.value)} /></label>
           <label className="field"><span>Валюта</span><input value={f.scamCurrency} onChange={(e) => set("scamCurrency", e.target.value)} /></label>
@@ -144,7 +161,8 @@ export default function Moderation() {
                   ))}
                 </div>
               )}
-              {s.description && <p className="desc">{s.description}</p>}
+              {s.botCheck && <div className="c-bot"><span>🤖 Перевірка бота</span>{s.botReward && <span>🎁 {s.botReward}</span>}{s.botSponsors != null && <span>🤝 {s.botSponsors}</span>}{s.botUsage && <span>👥 {s.botUsage}</span>}</div>}
+              {s.description && <p className="desc">{pickDesc(s, lang)}</p>}
               {s.screenshots.length > 0 && <ul className="links">{s.screenshots.map((u: string, i: number) => <li key={i}><a href={safeHref(u)} target="_blank" rel="noopener noreferrer nofollow">{u.slice(0, 70)}</a></li>)}</ul>}
               {s.submissions.map((x: any) => (
                 <div className="c-date" key={x.id}>жалоба #{x.id} · IP {x.ip || "—"} {x.ip && <button className="link-btn" onClick={() => ban(x.ip)}>бан IP</button>}{x.contactUsername && <> · зв'язок: @{x.contactUsername}</>}</div>

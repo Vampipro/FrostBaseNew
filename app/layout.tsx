@@ -1,3 +1,7 @@
+import "@fontsource/unbounded/400.css";
+import "@fontsource/unbounded/700.css";
+import "@fontsource/jetbrains-mono/400.css";
+import "@fontsource/jetbrains-mono/700.css";
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
@@ -20,11 +24,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="ru" data-theme="frost" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: INIT }} />
-        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/unbounded/400.css" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/unbounded/700.css" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono/400.css" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono/700.css" />
       </head>
       <body>
         <Providers>

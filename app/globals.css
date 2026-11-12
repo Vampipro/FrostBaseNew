@@ -551,3 +551,10 @@ html[data-lite="on"] .results-grid{perspective:none}
 html[data-lite="on"] .card{animation:none;transform:none;transform-style:flat;transition:border-color .15s}
 html[data-lite="on"] .card:hover{transform:none;box-shadow:none}
 html[data-lite="on"] .card:active{transform:scale(.985)}
+
+/* ---- перевірка бота / таби форми ---- */
+.st-bot{color:#b89cff;border-color:#b89cff;background:rgba(184,156,255,.12)}
+[data-theme="light"] .st-bot{color:#5b3fb5;border-color:#7c5bd6;background:rgba(124,91,214,.12)}
+.c-bot{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--acc2)}
+.seg-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.seg-tabs .btn.ghost.on{background:var(--acc);color:#04111f}

@@ -1,13 +1,14 @@
 import { prisma } from "./db";
 import { parseAmount, isHttpUrl } from "./http";
 import { isTgId } from "./name";
+import { clean } from "./name";
 
 /** Перетворює тіло форми адмінки в дані для Prisma. Повертає {data} або {error}. */
 export function scammerData(b: any): { data?: any; error?: string } {
   const d: any = {};
-  const s = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
+  const s = (v: unknown, max: number) => clean(v, max);
   if ("name" in b) {
-    d.name = s(b.name, 64).replace(/^@/, "");
+    d.name = s(b.name, 64).replace(/^@+/, "");
     if (!d.name) return { error: "Ім'я не може бути порожнім" };
   }
   if ("telegramUserId" in b) {
@@ -16,8 +17,29 @@ export function scammerData(b: any): { data?: any; error?: string } {
     d.telegramUserId = t ? BigInt(t) : null;
   }
   if ("description" in b) d.description = s(b.description, 4000);
+  if ("descriptionI18n" in b) {
+    const o = b.descriptionI18n && typeof b.descriptionI18n === "object" ? b.descriptionI18n : {};
+    const v: Record<string, string> = {};
+    for (const l of ["ua", "en"]) {
+      const x = s(o[l], 4000);
+      if (x) v[l] = x;
+    }
+    d.descriptionI18n = v;
+  }
+  if ("botCheck" in b) d.botCheck = !!b.botCheck;
+  if ("botReward" in b) d.botReward = s(b.botReward, 80);
+  if ("botUsage" in b) d.botUsage = s(b.botUsage, 60);
+  if ("botSponsors" in b) {
+    const raw = s(b.botSponsors, 6);
+    const n = Number(raw);
+    if (raw && (!Number.isInteger(n) || n < 0 || n > 100000)) return { error: "Кількість спонсорів: ціле число ≥ 0" };
+    d.botSponsors = raw ? n : null;
+  }
   if ("scamCurrency" in b) d.scamCurrency = s(b.scamCurrency, 24);
-  if ("proofLink" in b) d.proofLink = s(b.proofLink, 500);
+  if ("proofLink" in b) {
+    d.proofLink = s(b.proofLink, 500);
+    if (d.proofLink && !isHttpUrl(d.proofLink)) return { error: "Посилання на докази має бути http(s)" };
+  }
   if ("scamAmount" in b) {
     const raw = s(b.scamAmount, 24);
     const n = parseAmount(raw);

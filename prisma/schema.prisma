@@ -44,6 +44,11 @@ model Scammer {
   proofLink       String    @default("")
   screenshots     String[]  @default([])
   appealsDisabled Boolean   @default(false)
+  descriptionI18n Json      @default("{}") // {"ua":"...","en":"..."} — необов'язкові переклади; російський текст лежить у description
+  botCheck        Boolean   @default(false) // запит на перевірку бота (подається через форму)
+  botReward       String    @default("")
+  botSponsors     Int?
+  botUsage        String    @default("")
   searchCount     Int       @default(0)
   viewCount       Int       @default(0)
   likeCount       Int       @default(0)

@@ -8,18 +8,22 @@ export function ok(data: unknown, status = 200) {
 }
 export const fail = (error: string, status = 400) => ok({ error }, status);
 
+const IP_RE = /^[0-9a-fA-F:.]{3,45}$/;
 export function getIp(req: Request): string {
   const h = req.headers;
-  const direct = h.get("x-vercel-forwarded-for") || h.get("x-real-ip");
-  if (direct) return direct.split(",")[0].trim();
-  const xf = h.get("x-forwarded-for");
-  return xf ? xf.split(",")[0].trim() : "0.0.0.0";
+  const raw = h.get("x-vercel-forwarded-for") || h.get("x-real-ip") || h.get("x-forwarded-for") || "";
+  const ip = raw.split(",")[0].trim();
+  // сміття/надто довгі значення заголовка не потрапляють у БД і ключі rate-limit
+  return IP_RE.test(ip) ? ip : "0.0.0.0";
 }
 
 export async function readBody<T = any>(req: Request): Promise<T> {
   try {
     if (Number(req.headers.get("content-length") || 0) > 200_000) return {} as T;
-    return (await req.json()) as T;
+    const text = await req.text(); // chunked-тіла теж обмежуємо, а не лише content-length
+    if (text.length > 200_000) return {} as T;
+    const v = JSON.parse(text);
+    return (v && typeof v === "object" && !Array.isArray(v) ? v : {}) as T;
   } catch {
     return {} as T;
   }

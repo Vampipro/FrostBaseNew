@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { ok, fail, getIp, readBody, toInt, isHttpUrl } from "@/lib/http";
 import { currentUser } from "@/lib/auth";
 import { consume, getSetting, isBanned } from "@/lib/guard";
+import { clean } from "@/lib/name";
 
 export async function POST(req: Request) {
   const { scammerId: raw, description, screenshots, website } = await readBody(req);
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
   if (website) return ok({ ok: true }); // honeypot
   const ip = getIp(req);
   if (await isBanned(ip)) return fail("Доступ заборонено", 403);
-  const text = typeof description === "string" ? description.trim() : "";
+  const text = typeof description === "string" ? clean(description, 3000) : "";
   if (text.length < 10 || text.length > 2000) return fail("Опис: 10–2000 символів");
   const shots: string[] = Array.isArray(screenshots) ? screenshots.map((s: any) => String(s).trim()).filter(Boolean) : [];
   if (shots.length > 10 || shots.some((s) => s.length > 500 || !isHttpUrl(s))) return fail("Скріншоти: до 10 коректних посилань http(s)");
