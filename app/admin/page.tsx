@@ -39,15 +39,17 @@ export default function AdminPage() {
           <button key={x.id} className={"tag-chip" + (tab === x.id ? " on" : "")} onClick={() => setTab(x.id)}>{x.label}</button>
         ))}
       </div>
-      {tab === "moderation" && <Moderation />}
-      {tab === "botchecks" && <BotChecks />}
-      {tab === "comments" && <Comments />}
-      {tab === "appeals" && <Appeals />}
-      {tab === "statuses" && isAdmin && <Dict kind="statuses" />}
-      {tab === "types" && isAdmin && <Dict kind="types" />}
-      {tab === "bans" && <BansTab isAdmin={isAdmin} />}
-      {tab === "users" && <UsersTab isAdmin={isAdmin} />}
-      {tab === "settings" && isAdmin && <SettingsTab />}
+      <div className="admin-content" key={tab}>
+        {tab === "moderation" && <Moderation />}
+        {tab === "botchecks" && <BotChecks />}
+        {tab === "comments" && <Comments />}
+        {tab === "appeals" && <Appeals />}
+        {tab === "statuses" && isAdmin && <Dict kind="statuses" />}
+        {tab === "types" && isAdmin && <Dict kind="types" />}
+        {tab === "bans" && <BansTab isAdmin={isAdmin} />}
+        {tab === "users" && <UsersTab isAdmin={isAdmin} />}
+        {tab === "settings" && isAdmin && <SettingsTab />}
+      </div>
     </main>
   );
 }

@@ -14,6 +14,7 @@
 import { Client } from "pg";
 import { PrismaClient } from "@prisma/client";
 import { writeFileSync } from "node:fs";
+import { SCAMMER_TYPE_KEYS } from "../lib/scammer-type";
 
 const prisma = new PrismaClient();
 const oldUrl = process.env.OLD_DATABASE_URL;
@@ -86,9 +87,9 @@ function normalizeType(raw: string): { key: string; label: string } | null {
   const s = (raw || "").trim();
   if (!s) return null;
   const l = s.toLowerCase();
-  if (["бот", "bot"].includes(l)) return { key: "bot", label: "Бот" };
-  if (["человек", "людина", "human", "person"].includes(l)) return { key: "human", label: "Людина" };
-  if (l === "nft") return { key: "nft", label: "NFT" };
+  if (["бот", "bot"].includes(l)) return { key: SCAMMER_TYPE_KEYS.BOT, label: "Бот" };
+  if (["человек", "людина", "human", "person"].includes(l)) return { key: SCAMMER_TYPE_KEYS.HUMAN, label: "Людина" };
+  if (l === "nft") return { key: SCAMMER_TYPE_KEYS.NFT, label: "NFT" };
   return { key: "custom-" + l.replace(/[^a-z0-9а-яіїєґ]+/gi, "-").slice(0, 40), label: s };
 }
 

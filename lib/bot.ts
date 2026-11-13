@@ -1,15 +1,24 @@
 import { prisma } from "./db";
+import { SCAMMER_TYPE_KEYS } from "./scammer-type";
 
-const BOT = /^(bot|bots|бот|боти|боты)$/i;
+const BOT_LABEL = /^(bot|bots|бот|боти|боты)$/i;
 const norm = (v: unknown) => String(v ?? "").trim().toLowerCase();
 
-/** Тип «Бот» у словнику: шукаємо за key, потім за назвою/перекладами (key може бути і кирилицею). */
+/** Find the canonical bot type. The legacy fallback keeps older/custom dictionaries working. */
 export async function findBotType() {
-  const types = await prisma.scammerType.findMany({ select: { id: true, key: true, label: true, translations: true } });
+  const canonical = await prisma.scammerType.findUnique({
+    where: { key: SCAMMER_TYPE_KEYS.BOT },
+    select: { id: true, key: true, label: true, translations: true },
+  });
+  if (canonical) return canonical;
+
+  const types = await prisma.scammerType.findMany({
+    select: { id: true, key: true, label: true, translations: true },
+  });
   return (
-    types.find((t) => BOT.test(norm(t.key))) ??
-    types.find((t) => BOT.test(norm(t.label))) ??
-    types.find((t) => Object.values((t.translations as Record<string, unknown>) || {}).some((v) => BOT.test(norm(v)))) ??
+    types.find((t) => BOT_LABEL.test(norm(t.key))) ??
+    types.find((t) => BOT_LABEL.test(norm(t.label))) ??
+    types.find((t) => Object.values((t.translations as Record<string, unknown>) || {}).some((v) => BOT_LABEL.test(norm(v)))) ??
     null
   );
 }
