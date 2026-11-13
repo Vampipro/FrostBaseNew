@@ -118,7 +118,6 @@ export function UsersTab({ isAdmin }: { isAdmin: boolean }) {
   const [pages, setPages] = useState(1);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState<any>(null);
-  const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   useEffect(() => {
@@ -145,20 +144,17 @@ export function UsersTab({ isAdmin }: { isAdmin: boolean }) {
       donated: String(u.donated ?? "0"),
       banReason: u.banReason || "",
     });
-    setNewPassword("");
   };
 
   const save = async (id: number) => {
     if (saving || !draft) return;
     setSaving(true);
-    const body = { ...draft, ...(newPassword.trim() ? { password: newPassword } : {}) };
-    const r = await api("/api/admin/users", { method: "PATCH", body: { ...body, id } });
+    const r = await api("/api/admin/users", { method: "PATCH", body: { ...draft, id } });
     setSaving(false);
     if (r.error) return toast(r.error);
     toast(tt("Дані користувача оновлено", "User updated", "Данные пользователя обновлены"));
     setEditingId(null);
     setDraft(null);
-    setNewPassword("");
     load();
   };
 
@@ -214,7 +210,6 @@ export function UsersTab({ isAdmin }: { isAdmin: boolean }) {
                 <label className="field"><span>{tt("Донат", "Donated", "Донат")}</span><input type="number" min="0" max="9999999999.99" step="0.01" value={draft.donated} onChange={(e) => setDraft({ ...draft, donated: e.target.value })} /></label>
                 <label className="field users-field-wide"><span>{tt("Посилання на аватар (HTTPS)", "Avatar URL (HTTPS)", "Ссылка на аватар (HTTPS)")}</span><input maxLength={500} placeholder="https://…" value={draft.image} onChange={(e) => setDraft({ ...draft, image: e.target.value })} /></label>
                 <label className="field users-field-wide"><span>{tt("Причина блокування (порожньо = розблокувати)", "Ban reason (empty = unban)", "Причина блокировки (пусто = разблокировать)")}</span><input maxLength={200} value={draft.banReason} onChange={(e) => setDraft({ ...draft, banReason: e.target.value })} /></label>
-                <label className="field users-field-wide"><span>{tt("Новий пароль (необов'язково)", "New password (optional)", "Новый пароль (необязательно)")}</span><input type="password" autoComplete="new-password" minLength={8} maxLength={72} placeholder={tt("Залиш порожнім, щоб не змінювати", "Leave empty to keep unchanged", "Оставь пустым, чтобы не менять")} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} /></label>
               </div>
               <label className="check"><input type="checkbox" checked={draft.isSponsor} onChange={(e) => setDraft({ ...draft, isSponsor: e.target.checked })} /> {tt("Статус спонсора", "Sponsor status", "Статус спонсора")}</label>
               <div className="modal-actions"><button className="btn" disabled={saving} onClick={() => save(u.id)}>{saving ? tt("Збереження…", "Saving…", "Сохранение…") : tt("Зберегти зміни", "Save changes", "Сохранить изменения")}</button><button className="btn ghost" disabled={saving} onClick={() => { setEditingId(null); setDraft(null); }}>{tt("Скасувати", "Cancel", "Отмена")}</button></div>

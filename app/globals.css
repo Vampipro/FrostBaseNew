@@ -757,3 +757,38 @@ html[data-lite="on"] .dict-card:hover { transform: none; box-shadow: none; }
 .user-editor .field{margin:8px 0}
 .user-editor .modal-actions{margin-top:12px}
 @media(max-width:620px){.user-admin-head{align-items:flex-start}.user-admin-actions{width:100%;margin-left:54px}.user-admin-actions .btn{flex:1}.user-admin-meta,.user-editor{margin-left:0}.users-form-grid{grid-template-columns:1fr}.users-field-wide{grid-column:auto}.users-search{max-width:none;width:100%}}
+
+
+/* ---- Scammer database and username history ---- */
+.scammer-db-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 16px;padding:15px 17px;border:1px solid var(--line);background:linear-gradient(120deg,rgba(95,217,255,.09),transparent 70%),var(--panel)}
+.scammer-db-heading h3{margin:0;color:var(--ice);font:700 13px 'Unbounded',sans-serif;letter-spacing:1px}
+.scammer-db-heading p{margin:7px 0 0;color:var(--dim);font-size:11px}
+.scammer-db-heading>span{flex:none;padding:7px 9px;border:1px solid var(--line);color:var(--acc);font:700 9px 'JetBrains Mono',monospace;letter-spacing:1.4px}
+.admin-name-history{margin:12px 0 16px;padding:13px;border:1px solid var(--line);background:linear-gradient(130deg,rgba(95,217,255,.055),transparent 65%),rgba(0,0,0,.12)}
+.admin-name-history-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.admin-name-history-head>div{display:flex;flex-direction:column;gap:4px}
+.admin-name-history-head b{color:var(--ice);font-size:11px;letter-spacing:.7px}
+.admin-name-history-head small{color:var(--dim);font-size:9px}
+.admin-name-history-head>span{display:grid;place-items:center;min-width:26px;height:24px;padding:0 6px;border:1px solid var(--line);color:var(--acc);font:700 10px 'JetBrains Mono',monospace}
+.admin-name-history-note,.username-history-note{margin:10px 0;color:var(--dim);font-size:10px;line-height:1.6}
+.admin-name-history-add{display:flex;gap:8px;align-items:center}
+.admin-name-history-add input{flex:1;min-width:0;padding:9px 11px;border:1px solid var(--line);background:var(--field);color:var(--ice);font:11px 'JetBrains Mono',monospace;outline:0}
+.admin-name-history-add input:focus{border-color:var(--acc)}
+.admin-name-history-list,.username-history-list{display:grid;gap:6px;margin-top:10px}
+.admin-name-history-row,.username-history-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);background:rgba(255,255,255,.018);font-size:10px}
+.admin-name-history-row>span,.username-history-row>span{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.admin-name-history-row b,.username-history-row b{color:var(--ice);overflow-wrap:anywhere}
+.admin-name-history-row i,.username-history-row i{color:var(--acc);font-style:normal}
+.admin-name-history-row small,.username-history-row small{margin-left:auto;color:var(--dim);font:9px 'JetBrains Mono',monospace;white-space:nowrap}
+.admin-name-history-row button{font-size:17px;color:#ff7777}
+.username-history{margin:15px 0;padding:0;border:1px solid var(--line);background:linear-gradient(130deg,rgba(95,217,255,.05),transparent 70%),var(--panel)}
+.username-history>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;color:var(--acc);font:700 10px 'Unbounded',sans-serif;letter-spacing:1px;cursor:pointer;list-style:none}
+.username-history>summary::-webkit-details-marker{display:none}
+.username-history>summary::after{content:'+';color:var(--dim);font:16px 'JetBrains Mono',monospace}
+.username-history[open]>summary::after{content:'−'}
+.username-history>summary b{display:grid;place-items:center;min-width:24px;height:22px;padding:0 6px;border:1px solid var(--line);color:var(--ice);font:700 10px 'JetBrains Mono',monospace}
+.username-history-note{padding:0 14px;margin:0 0 8px}
+.username-history-list{padding:0 12px 12px;margin:0}
+.danger-text{color:#ff7777!important}
+@media(max-width:620px){.scammer-db-heading{align-items:flex-start}.scammer-db-heading>span{font-size:8px}.admin-name-history{padding:10px}.admin-name-history-add{align-items:stretch;flex-direction:column}.admin-name-history-add .btn{width:100%}.admin-name-history-row,.username-history-row{align-items:flex-start;flex-direction:column}.admin-name-history-row button{align-self:flex-end}.username-history-row small{margin-left:0}}
+html[data-lite="on"] .admin-name-history,html[data-lite="on"] .username-history{animation:none!important}

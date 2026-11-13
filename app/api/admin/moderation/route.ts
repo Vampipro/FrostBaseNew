@@ -14,10 +14,15 @@ export async function GET(req: Request) {
   const sort = sp.get("sort") || "date";
   const dir = sp.get("dir") === "asc" ? "asc" : "desc";
   const page = Math.max(1, Number(sp.get("page")) || 1);
-  const q = (sp.get("q") || "").trim().replace(/^@/, "");
+  const q = (sp.get("q") || "").trim().replace(/^[@#]/, "");
+  const typeId = Number(sp.get("typeId")) || 0;
+  const statusId = Number(sp.get("statusId")) || 0;
+  const includeSimilar = sp.get("similar") !== "0";
 
   const and: any[] = [];
   if (status !== "all") and.push({ moderation: status });
+  if (Number.isInteger(typeId) && typeId > 0) and.push({ typeId });
+  if (Number.isInteger(statusId) && statusId > 0) and.push({ statuses: { some: { statusId } } });
   if (q) {
     const or: any[] = [{ name: { contains: q, mode: "insensitive" } }];
     if (/^\d{1,19}$/.test(q)) or.push(...(isTgId(q) ? [{ telegramUserId: BigInt(q) }] : []), { id: Number(q) <= 2147483647 ? Number(q) : -1 });
@@ -29,6 +34,7 @@ export async function GET(req: Request) {
     sort === "views" ? { viewCount: dir } :
     sort === "searches" ? { searchCount: dir } :
     sort === "complaints" ? { submissions: { _count: dir } } :
+    sort === "name" ? { name: dir } :
     { createdAt: dir };
 
   const where = and.length ? { AND: and } : {};
@@ -36,14 +42,14 @@ export async function GET(req: Request) {
     prisma.scammer.count({ where }),
     prisma.scammer.findMany({
       where, orderBy: [orderBy, { id: "desc" }], skip: (page - 1) * PAGE, take: PAGE,
-      include: { ...cardInclude, submissions: { orderBy: { createdAt: "desc" }, take: 3 } },
+      include: { ...cardInclude, nameHistory: { orderBy: [{ createdAt: "asc" }, { id: "asc" }] }, submissions: { orderBy: { createdAt: "desc" }, take: 3 } },
     }),
   ]);
 
   const items = await Promise.all(
     rows.map(async (r: any) => {
       let similar: any[] = [];
-      if (r.moderation === "pending") {
+      if (includeSimilar && r.moderation === "pending") {
         const or: any[] = [{ name: { equals: r.name, mode: "insensitive" } }];
         if (r.name.length >= 4) or.push({ name: { contains: r.name, mode: "insensitive" } });
         if (r.telegramUserId) or.push({ telegramUserId: r.telegramUserId });
@@ -60,6 +66,8 @@ export async function GET(req: Request) {
       }
       return {
         ...toCard(r),
+        usernameHistory: r.nameHistory,
+        rawBotReward: r.botReward,
         description: r.description,
         descriptionI18n: r.descriptionI18n ?? {},
         screenshots: r.screenshots,

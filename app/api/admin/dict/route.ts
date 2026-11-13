@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/db";
 import { ok, fail, readBody, toInt } from "@/lib/http";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireStaff } from "@/lib/auth";
 import { dictModel, dictData } from "@/lib/dict";
 
 export const dynamic = "force-dynamic";
 
 // GET ?kind=statuses|types — список; POST {kind,...} — створити; PATCH {kind,id,...} — змінити; DELETE ?kind=&id= — видалити
 export async function GET(req: Request) {
-  if (!(await requireAdmin())) return fail("Немає доступу", 403);
+  if (!(await requireStaff())) return fail("Немає доступу", 403);
   const m = dictModel(new URL(req.url).searchParams.get("kind") || "");
   if (!m) return fail("Не знайдено", 404);
   return ok(await (prisma as any)[m].findMany({ orderBy: [{ sortOrder: "asc" }, { id: "asc" }] }));

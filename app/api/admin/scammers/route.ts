@@ -23,8 +23,12 @@ export async function PATCH(req: Request) {
   if (error || !data) return fail(error || "Помилка");
   const old = await prisma.scammer.findUnique({ where: { id }, select: { name: true } });
   if (!old) return fail("Не знайдено", 404);
-  if (data.name && data.name !== old.name) await prisma.scammerNameHistory.create({ data: { scammerId: id, oldName: old.name, newName: data.name } });
-  await prisma.scammer.update({ where: { id }, data });
+  await prisma.$transaction(async (tx) => {
+    if (data.name && data.name !== old.name) {
+      await tx.scammerNameHistory.create({ data: { scammerId: id, oldName: old.name.replace(/^@+/, ""), newName: data.name } });
+    }
+    await tx.scammer.update({ where: { id }, data });
+  });
   if (Array.isArray(b.statusIds)) await replaceStatuses(id, b.statusIds);
   // змінили модерацію в редакторі — синхронізуємо жалоби цього запису
   if (data.moderation === "approved" || data.moderation === "rejected") {

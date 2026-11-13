@@ -1,130 +1,127 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { api, useApp } from "@/components/Providers";
-import ScammerCard from "@/components/ScammerCard";
+import ScammerCard, { avatarGrad } from "@/components/ScammerCard";
 import ScammerView from "@/components/ScammerView";
 import Modal from "@/components/Modal";
 import { tr } from "@/lib/i18n";
+import { uname } from "@/lib/name";
 
-type Meta = { statuses: any[]; types: any[] };
 const fmt = (n: number) => String(n ?? 0).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-export default function Home() {
-  const { t, lang } = useApp();
-  const [meta, setMeta] = useState<Meta>({ statuses: [], types: [] });
-  const [stats, setStats] = useState<any>(null);
-  const [input, setInput] = useState("");
-  const [q, setQ] = useState("");
-  const [sel, setSel] = useState<string[]>([]);
-  const [type, setType] = useState("");
-  const [sort, setSort] = useState("rel");
-  const [page, setPage] = useState(1);
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+export default function StatsPage() {
+  const { t, lang, theme } = useApp();
+  const [s, setS] = useState<any>(null);
   const [openId, setOpenId] = useState<number | null>(null);
-  const seq = useRef(0);
+  useEffect(() => { api("/api/stats").then((r) => r.totals && setS(r)); }, []);
+  if (!s) return <main className="page"><div className="empty-sub">{t("loading")}</div></main>;
 
-  useEffect(() => {
-    api<Meta>("/api/meta").then((m) => m.statuses && setMeta(m));
-    api("/api/stats?lite=1").then((s) => s.totals && setStats(s));
-  }, []);
-
-  const run = useCallback(async () => {
-    const n = ++seq.current;
-    setLoading(true);
-    const p = new URLSearchParams({ q, statuses: sel.join(","), type, sort, page: String(page) });
-    const r = await api("/api/search?" + p);
-    if (n === seq.current) { setData(r.error ? { results: [], similar: [], total: 0, pages: 1, error: r.error } : r); setLoading(false); }
-  }, [q, sel, type, sort, page]);
-  useEffect(() => { run(); }, [run]);
-
-  // живий пошук: через 0.45 с після останнього символу
-  useEffect(() => {
-    const id = setTimeout(() => {
-      const v = input.trim();
-      if (v !== q && (v.length === 0 || v.length >= 2)) { setPage(1); setQ(v); }
-    }, 450);
-    return () => clearTimeout(id);
-  }, [input, q]);
-
-  const submit = (v = input) => { setPage(1); setQ(v.trim()); setInput(v); };
-  const reset = () => { setInput(""); setQ(""); setSel([]); setType(""); setSort("rel"); setPage(1); };
-  const toggle = (k: string) => { setPage(1); setSel(sel.includes(k) ? sel.filter((x) => x !== k) : [...sel, k]); };
+  const T = s.totals;
+  const cards: [string, number][] = [
+    [t("st_scammers"), T.scammers], [t("st_pending"), T.pending], [t("st_subs"), T.submissions], [t("stat_views"), T.views],
+    [t("stat_searches"), T.searches], [t("st_today"), T.searchesToday], [t("st_7d"), T.searches7d], [t("st_users"), T.users], [t("st_comments"), T.comments],
+  ];
+  const max = Math.max(1, ...s.perDay.map((d: any) => d.count));
+  const react = [["👍", T.likes], ["😐", T.neutral], ["👎", T.dislikes]] as const;
+  const reactMax = Math.max(1, T.likes, T.neutral, T.dislikes);
+  const bars = (rows: any[]) => {
+    const m = Math.max(1, ...rows.map((r) => r.count));
+    return rows.map((r) => (
+      <div className="bar-row" key={r.id}>
+        <span className="bar-k">{tr(r, lang)}</span>
+        <div className="bar"><i style={{ width: (r.count / m) * 100 + "%", background: r.color || "var(--acc)" }} /></div>
+        <b>{fmt(r.count)}</b>
+      </div>
+    ));
+  };
+  const MEDAL = ["🥇", "🥈", "🥉"];
+  // Лідерборд: місце/медаль, аватар, ім'я, шкала відносно лідера і значення
+  const board = (title: string, rows: any[], metric: string, icon: string) => {
+    const m = Math.max(1, ...rows.map((r) => Number(r[metric]) || 0));
+    return (
+      <div className="panel lb-panel">
+        <h3 className="sub-title" style={{ marginTop: 0 }}>{title}</h3>
+        <ol className="lb">
+          {rows.map((r, i) => (
+            <li key={r.id}>
+              <button className={"lb-row" + (i < 3 ? " top top" + (i + 1) : "")} onClick={() => setOpenId(r.id)}>
+                <span className="lb-pos">{i < 3 ? MEDAL[i] : i + 1}</span>
+                <span className="lb-av" style={{ background: avatarGrad(uname(r.name), theme) }}>{uname(r.name)[0]?.toUpperCase()}</span>
+                <span className="lb-main">
+                  <b className="lb-name">{uname(r.name)}</b>
+                  <span className="lb-bar"><i style={{ width: Math.max(4, ((Number(r[metric]) || 0) / m) * 100) + "%" }} /></span>
+                </span>
+                <span className="lb-val">{icon} {fmt(Number(r[metric]) || 0)}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </div>
+    );
+  };
+  const queryBoard = (rows: any[]) => {
+    const m = Math.max(1, ...rows.map((r) => Number(r.count) || 0));
+    return (
+      <div className="panel lb-panel">
+        <h3 className="sub-title" style={{ marginTop: 0 }}>{t("st_top_queries")}</h3>
+        <ol className="lb">
+          {rows.map((x, i) => (
+            <li key={x.query}>
+              <div className={"lb-row static" + (i < 3 ? " top top" + (i + 1) : "")}>
+                <span className="lb-pos">{i < 3 ? MEDAL[i] : i + 1}</span>
+                <span className="lb-main">
+                  <b className="lb-name">{x.query}</b>
+                  <span className="lb-bar"><i style={{ width: Math.max(4, (Number(x.count) / m) * 100) + "%" }} /></span>
+                </span>
+                <span className="lb-val">🔍 {fmt(Number(x.count) || 0)}</span>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    );
+  };
 
   return (
-    <main className="home">
-      <section className="search-zone" id="search">
-        <div className="panel search-panel">
-          <form className="search-row" onSubmit={(e) => { e.preventDefault(); submit(); }}>
-            <input id="queryInput" value={input} onChange={(e) => setInput(e.target.value)} maxLength={64} autoComplete="off" spellCheck={false} placeholder={t("search_ph")} />
-            <button className="search-btn" type="submit"><span className="sb-ico">⌕</span><span>{t("search_btn")}</span></button>
-          </form>
-          <div className="filters-row">
-            <div className="tags-wrap">
-              {meta.statuses.map((s) => (
-                <button key={s.id} className={"tag-chip" + (sel.includes(String(s.id)) ? " on" : "")} style={{ ["--tc" as any]: s.color }} title={s.description || ""} onClick={() => toggle(String(s.id))}>{tr(s, lang)}</button>
-              ))}
-              <button className={"tag-chip" + (sel.includes("pending") ? " on" : "")} style={{ ["--tc" as any]: "#ffc857" }} onClick={() => toggle("pending")}>{t("pending_status")}</button>
-            </div>
-            <div className="selects">
-              <select value={type} onChange={(e) => { setType(e.target.value); setPage(1); }} aria-label="type">
-                <option value="">{t("all_types")}</option>
-                {meta.types.map((x) => <option key={x.id} value={x.id}>{tr(x, lang)}</option>)}
-              </select>
-              <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }} aria-label="sort">
-                {["rel", "new", "old", "likes", "views", "complaints"].map((k) => <option key={k} value={k}>{t("sort_" + k)}</option>)}
-              </select>
-            </div>
-          </div>
-          {(q || sel.length > 0 || type) && (
-            <div className="results-meta"><b>{data?.total ?? 0}{data?.capped ? "+" : ""}</b> · <button className="link-btn" onClick={reset}>{t("reset")}</button></div>
-          )}
+    <main className="page">
+      <h2 className="zone-title"><span className="zt-ico">▥</span><span>{t("st_title")}</span></h2>
+      <div className="stat-grid">
+        {cards.map(([k, v]) => <div className="panel stat-card" key={k}><span className="stat-num">{fmt(v)}</span><span className="stat-label">{k}</span></div>)}
+      </div>
+
+      <div className="two-col">
+        <div className="panel">
+          <h3 className="sub-title" style={{ marginTop: 0 }}>{t("st_reactions")}</h3>
+          {react.map(([e, n]) => (
+            <div className="bar-row" key={e}><span className="bar-k">{e}</span><div className="bar"><i style={{ width: (n / reactMax) * 100 + "%" }} /></div><b>{fmt(n)}</b></div>
+          ))}
+          <h3 className="sub-title">{t("st_by_type")}</h3>
+          {bars(s.byType)}
         </div>
-
-        {data?.similar?.length > 0 && (
-          <>
-            <h3 className="zone-title"><span className="zt-ico">≈</span><span>{t("similar")}</span><span className="count-badge">{data.similar.length}</span></h3>
-            <div className="results-grid">{data.similar.map((s: any) => <ScammerCard key={s.id} s={s} pct={s.pct} onOpen={setOpenId} />)}</div>
-          </>
-        )}
-
-        <h3 className="zone-title"><span className="zt-ico">▤</span><span>{t("results")}</span><span className="count-badge">{data?.total ?? 0}{data?.capped ? "+" : ""}</span></h3>
-        <div className="results-grid" style={{ opacity: loading ? 0.55 : 1 }}>
-          {data?.results?.map((s: any) => <ScammerCard key={s.id} s={s} onOpen={setOpenId} />)}
+        <div className="panel">
+          <h3 className="sub-title" style={{ marginTop: 0 }}>{t("st_by_status")}</h3>
+          {bars(s.byStatus)}
         </div>
-        {data && data.results.length === 0 && !loading && (
-          <div className="empty-state">
-            <div className="empty-ico">∅</div>
-            <div className="empty-title">{data.error || t("empty_title")}</div>
-            <div className="empty-sub">{t("empty_sub")}</div>
-            <button className="btn ghost" onClick={reset}>{t("reset")}</button>
-          </div>
-        )}
-        {data && data.pages > 1 && (
-          <div className="pager">
-            <button className="btn ghost" disabled={page <= 1} onClick={() => setPage(page - 1)}>‹</button>
-            <span>{t("page")} {page} / {data.pages}</span>
-            <button className="btn ghost" disabled={page >= data.pages} onClick={() => setPage(page + 1)}>›</button>
-          </div>
-        )}
-      </section>
+      </div>
 
-      <section className="hero">
-        <div className="hero-text">
-          <div className="sys-line">{t("hero_pre")}</div>
-          <h1 className="glitch" data-text="FROSTBASE">FROSTBASE</h1>
-          <p className="hero-sub">{t("hero_sub")}</p>
-          {stats && (
-            <div className="hero-stats">
-              <div className="stat"><span className="stat-num">{fmt(stats.totals.scammers)}</span><span className="stat-label">{t("stat_scammers")}</span></div>
-              <div className="stat"><span className="stat-num">{fmt(stats.totals.searches)}</span><span className="stat-label">{t("stat_searches")}</span></div>
-              <div className="stat"><span className="stat-num">{fmt(stats.totals.views)}</span><span className="stat-label">{t("stat_views")}</span></div>
-            </div>
-          )}
+      <div className="panel" style={{ marginTop: 16 }}>
+        <h3 className="sub-title" style={{ marginTop: 0 }}>{t("st_per_day")}</h3>
+        <div className="chart">
+          {s.perDay.map((d: any) => (
+            <div className="col" key={d.day} title={`${new Date(d.day).toLocaleDateString()}: ${d.count}`}><i style={{ height: (d.count / max) * 100 + "%" }} /><small>{new Date(d.day).getDate()}</small></div>
+          ))}
         </div>
-        <div className="hero-art"><div className="art-ring" /><div className="art-ring r2" /><img className="logo-big" src="/logo-384.png" width={340} height={340} alt="FROSTBASE" decoding="async" /></div>
-      </section>
+      </div>
 
+      <div className="two-col" style={{ marginTop: 16 }}>
+        {board(t("st_top_searched"), s.topSearched, "searchCount", "🔍")}
+        {board(t("st_top_viewed"), s.topViewed, "viewCount", "👁")}
+        {board(t("st_top_liked"), s.topLiked, "likeCount", "👍")}
+        {queryBoard(s.topQueries)}
+      </div>
+
+      <h3 className="zone-title"><span className="zt-ico">❄</span><span>{t("st_latest")}</span></h3>
+      <div className="results-grid">{s.latest.map((x: any) => <ScammerCard key={x.id} s={x} onOpen={setOpenId} />)}</div>
 
       {openId != null && <Modal wide onClose={() => setOpenId(null)}><ScammerView id={openId} /></Modal>}
     </main>

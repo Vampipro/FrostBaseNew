@@ -89,6 +89,23 @@ export default function ScammerView({ id }: { id: number }) {
           <div className="m-cell" key={k}><div className="m-k">{k}</div><div className="m-v">{v}</div></div>
         ))}
       </div>
+      {(s.usernameHistory ?? []).length > 0 && (
+        <details className="username-history">
+          <summary>
+            <span>{lang === "en" ? "USERNAME HISTORY" : lang === "ru" ? "ИСТОРИЯ ЮЗЕРНЕЙМОВ" : "ІСТОРІЯ ЮЗЕРНЕЙМІВ"}</span>
+            <b>{s.usernameHistory.length}</b>
+          </summary>
+          <p className="username-history-note">{lang === "en" ? "This history may be incomplete or inaccurate because previous usernames are entered manually by moderators." : lang === "ru" ? "История может быть неполной или неточной, поскольку прежние юзернеймы модераторы вносят вручную." : "Історія може бути неповною або неточною, оскільки попередні юзернейми модератори вносять вручну."}</p>
+          <div className="username-history-list">
+            {s.usernameHistory.map((h: any) => (
+              <div className="username-history-row" key={h.id}>
+                <span><b>@{h.oldName}</b><i>→</i><b>@{h.newName}</b></span>
+                <small>{fmtDate(h.createdAt, lang)}</small>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
       {desc && <><h4 className="sub-title">{t("m_desc")}</h4><p className="desc">{desc}</p></>}
       {(s.screenshots.length > 0 || s.proofLink) && (
         <>

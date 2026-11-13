@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/components/Providers";
-import Moderation from "@/components/admin/Moderation";
+import Moderation, { ScammersDatabase } from "@/components/admin/Moderation";
 import Dict from "@/components/admin/Dict";
 import BotChecks from "@/components/admin/BotChecks";
 import { useTT } from "@/components/admin/tt";
@@ -21,6 +21,7 @@ export default function AdminPage() {
 
   const TABS: { id: string; label: string; adminOnly?: boolean }[] = [
     { id: "moderation", label: tt("Модерація", "Moderation", "Модерация") },
+    { id: "database", label: tt("База скамерів", "Scammer database", "База скамеров") },
     { id: "botchecks", label: tt("Перевірки ботів", "Bot checks", "Проверки ботов") },
     { id: "comments", label: tt("Скарги на коментарі", "Comment reports", "Жалобы на комментарии") },
     { id: "appeals", label: tt("Апеляції", "Appeals", "Апелляции") },
@@ -41,6 +42,7 @@ export default function AdminPage() {
       </div>
       <div className="admin-content" key={tab}>
         {tab === "moderation" && <Moderation />}
+        {tab === "database" && <ScammersDatabase />}
         {tab === "botchecks" && <BotChecks />}
         {tab === "comments" && <Comments />}
         {tab === "appeals" && <Appeals />}

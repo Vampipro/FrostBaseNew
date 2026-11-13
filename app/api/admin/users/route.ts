@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { ok, fail, readBody, toInt, parseAmount } from "@/lib/http";
 import { requireAdmin } from "@/lib/auth";
@@ -99,12 +98,6 @@ export async function PATCH(req: Request) {
     const donated = parseAmount(b.donated);
     if (donated === null || donated > 9_999_999_999.99) return fail("Некоректна сума донату");
     data.donated = donated.toFixed(2);
-  }
-
-  if ("password" in b && String(b.password ?? "")) {
-    const password = String(b.password);
-    if (password.length < 8 || Buffer.byteLength(password) > 72) return fail("Пароль: мінімум 8 символів (до 72 байт)");
-    data.password = await bcrypt.hash(password, 11);
   }
 
   if (Object.keys(data).length === 0) return fail("Немає змін для збереження");
