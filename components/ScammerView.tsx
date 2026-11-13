@@ -4,7 +4,7 @@ import { api, useApp } from "./Providers";
 import { Badges, avatarGrad, fmtDate } from "./ScammerCard";
 import { tr } from "@/lib/i18n";
 import Link from "next/link";
-import { safeHref } from "@/lib/url";
+import EvidenceGallery from "./EvidenceGallery";
 import { uname, pickDesc } from "@/lib/name";
 
 export default function ScammerView({ id }: { id: number }) {
@@ -62,12 +62,6 @@ export default function ScammerView({ id }: { id: number }) {
   const canCheck = !!s.botCheck && s.moderation === "pending";
   const tgOk = /^[A-Za-z0-9_]{3,64}$/.test(uname(s.name));
   const VERD: Record<string, string> = { paid: t("v_paid"), partial: t("v_partial"), not_paid: t("v_not_paid") };
-  const shotLinks = (arr: string[]) => (
-    <ul className="links">
-      {arr.map((u: string, i: number) => <li key={i}><a href={safeHref(u)} target="_blank" rel="noopener noreferrer nofollow">#{i + 1} {u.replace(/^https?:\/\//, "").slice(0, 48)}</a></li>)}
-    </ul>
-  );
-
   const cells: [string, string | number][] = [
     [t("m_id"), s.telegramUserId ?? "—"],
     [t("m_type"), s.type ? tr(s.type, lang) : "—"],
@@ -98,19 +92,8 @@ export default function ScammerView({ id }: { id: number }) {
       {desc && <><h4 className="sub-title">{t("m_desc")}</h4><p className="desc">{desc}</p></>}
       {(s.screenshots.length > 0 || s.proofLink) && (
         <>
-          {s.screenshots.length > 0 && s.proofLink ? (
-            <>
-              <h4 className="sub-title">{t("m_shots_orig")}</h4>
-              {shotLinks(s.screenshots)}
-              <h4 className="sub-title">{t("m_shots_reserve")}</h4>
-              {shotLinks([s.proofLink])}
-            </>
-          ) : (
-            <>
-              <h4 className="sub-title">{t("m_proofs")}</h4>
-              {shotLinks(s.screenshots.length > 0 ? s.screenshots : [s.proofLink])}
-            </>
-          )}
+          {s.screenshots.length > 0 && <EvidenceGallery items={s.screenshots} title={s.proofLink ? t("m_shots_orig") : t("m_proofs")} />}
+          {s.proofLink && <EvidenceGallery items={[s.proofLink]} title={t("m_shots_reserve")} compact />}
         </>
       )}
       <div className="vote-row">
@@ -168,7 +151,7 @@ export default function ScammerView({ id }: { id: number }) {
             <div className="check-item" key={c.id}>
               <div className="comment-head"><span className={"verdict v-" + c.verdict}>{VERD[c.verdict] ?? c.verdict}</span><b>{c.user?.username ?? "—"}</b><span>{fmtDate(c.createdAt, lang)}</span></div>
               {c.comment && <div>{c.comment}</div>}
-              {shotLinks(c.screenshots)}
+              <EvidenceGallery items={c.screenshots} compact />
             </div>
           ))}
         </>

@@ -3,9 +3,9 @@ import { useCallback, useEffect, useState } from "react";
 import { api, useApp } from "../Providers";
 import { Badges, fmtDate } from "../ScammerCard";
 import Modal from "../Modal";
-import { safeHref } from "@/lib/url";
 import { uname, pickDesc } from "@/lib/name";
 import { useTT } from "./tt";
+import EvidenceGallery from "@/components/EvidenceGallery";
 
 const EMPTY = { name: "", telegramUserId: "", description: "", descUa: "", descEn: "", typeId: "", statusIds: [] as number[], scamAmount: "", scamCurrency: "", scamDate: "", proofLink: "", screenshots: "", moderation: "approved", appealsDisabled: false, botCheck: false, botSponsors: "", botUsage: "", likeCount: 0, neutralCount: 0, dislikeCount: 0, viewCount: 0, searchCount: 0 };
 
@@ -175,12 +175,8 @@ export default function Moderation() {
                 </div>
               )}
               {s.description && <p className="desc">{pickDesc(s, lang)}</p>}
-              {(s.screenshots.length > 0 || s.proofLink) && (
-                <ul className="links">
-                  {s.screenshots.map((u: string, i: number) => <li key={i}><a href={safeHref(u)} target="_blank" rel="noopener noreferrer nofollow">{u.slice(0, 70)}</a></li>)}
-                  {s.proofLink && <li><a href={safeHref(s.proofLink)} target="_blank" rel="noopener noreferrer nofollow">{tt("резерв", "backup", "резерв")}: {s.proofLink.slice(0, 60)}</a></li>}
-                </ul>
-              )}
+              {s.screenshots.length > 0 && <EvidenceGallery items={s.screenshots} title={tt("Оригінальні докази", "Original evidence", "Оригинальные доказательства")} compact />}
+              {s.proofLink && <EvidenceGallery items={[s.proofLink]} title={tt("Резервний доказ", "Backup evidence", "Резервное доказательство")} compact />}
               {s.submissions.map((x: any) => (
                 <div className="c-date" key={x.id}>{tt("Заявка", "Submission", "Заявка")} #{x.id} · IP {x.ip || "—"} {x.ip && <button className="link-btn" onClick={() => ban(x.ip)}>{tt("бан IP", "ban IP", "бан IP")}</button>}{x.contactUsername && <> · {tt("зв'язок", "contact", "связь")}: @{x.contactUsername}</>}</div>
               ))}

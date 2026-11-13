@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api, useApp } from "../Providers";
 import { fmtDate } from "../ScammerCard";
-import { safeHref } from "@/lib/url";
+import EvidenceGallery from "@/components/EvidenceGallery";
 import { uname } from "@/lib/name";
 import { useTT } from "./tt";
 
@@ -33,7 +33,7 @@ export default function BotChecks() {
             <span className="c-date">{fmtDate(c.createdAt, lang)} · {c.user?.username ?? "—"} · IP {c.ip || "—"} · {c.status}</span>
           </div>
           {c.comment && <p className="desc">{c.comment}</p>}
-          {c.screenshots.length > 0 && <ul className="links">{c.screenshots.map((u: string, i: number) => <li key={i}><a href={safeHref(u)} target="_blank" rel="noopener noreferrer nofollow">{u.slice(0, 70)}</a></li>)}</ul>}
+          {c.screenshots.length > 0 && <EvidenceGallery items={c.screenshots} compact />}
           <div className="modal-actions">
             {c.status !== "approved" && <button className="btn" onClick={() => set(c.id, "approved")}>{tt("Схвалити", "Approve", "Одобрить")}</button>}
             {c.status !== "rejected" && <button className="btn ghost" onClick={() => set(c.id, "rejected")}>{tt("Відхилити", "Reject", "Отклонить")}</button>}
