@@ -30,7 +30,7 @@ type EditorProps = {
 function EditorRow({ kind, row, onDone, variant = "panel" }: EditorProps) {
   const { toast } = useApp();
   const tt = useTT();
-  const [f, setF] = useState<any>(() => ({ ...row, translations: { ua: "", en: "", ru: "", ...(row.translations || {}) } }));
+  const [f, setF] = useState<any>(() => ({ ...row, translations: { ...(row.translations || {}), ua: row.translations?.ua ?? "", en: row.translations?.en ?? "", ru: row.translations?.ru ?? "" } }));
   const [saving, setSaving] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
   const tr = (l: string, v: string) => setF((p: any) => ({ ...p, translations: { ...p.translations, [l]: v } }));
