@@ -15,7 +15,9 @@ export function toCard(s: any) {
     scamAmount: s.scamAmount?.toString() ?? null,
     scamCurrency: s.scamCurrency,
     botCheck: !!s.botCheck,
-    botReward: s.botReward ?? "",
+    // нагорода бота = сума + валюта; старе текстове поле — запасний варіант для вже створених записів
+    botReward: s.botCheck ? [s.scamAmount?.toString(), s.scamCurrency].filter(Boolean).join(" ") || s.botReward || "" : "",
+    checking: !!s.checking,
     botSponsors: s.botSponsors ?? null,
     botUsage: s.botUsage ?? "",
     likeCount: s.likeCount,

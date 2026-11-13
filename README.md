@@ -63,3 +63,33 @@ CREATE INDEX IF NOT EXISTS scammer_name_trgm ON "Scammer" USING gin (lower(name)
 
 У `Scammer` додано поля `descriptionI18n`, `botCheck`, `botReward`, `botSponsors`, `botUsage` (усі з дефолтами, дані не зачіпаються).
 **Перед деплоєм** виконай один раз проти Neon: `npx prisma db push` — інакше Prisma-клієнт не знайде нових колонок.
+
+
+## Перевірки ботів (статус «На перевірці» + перевірки від користувачів)
+
+Нові: `Scammer.checking` і таблиця `BotCheck`. Або `npx prisma db push`, або SQL у Neon (безпечно повторювати):
+
+```sql
+ALTER TABLE "Scammer" ADD COLUMN IF NOT EXISTS "descriptionI18n" JSONB NOT NULL DEFAULT '{}';
+ALTER TABLE "Scammer" ADD COLUMN IF NOT EXISTS "botCheck" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Scammer" ADD COLUMN IF NOT EXISTS "botReward" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "Scammer" ADD COLUMN IF NOT EXISTS "botSponsors" INTEGER;
+ALTER TABLE "Scammer" ADD COLUMN IF NOT EXISTS "botUsage" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "Scammer" ADD COLUMN IF NOT EXISTS "checking" BOOLEAN NOT NULL DEFAULT false;
+
+CREATE TABLE IF NOT EXISTS "BotCheck" (
+  "id" SERIAL PRIMARY KEY,
+  "scammerId" INTEGER NOT NULL REFERENCES "Scammer"("id") ON DELETE CASCADE,
+  "userId" INTEGER REFERENCES "User"("id") ON DELETE SET NULL,
+  "verdict" TEXT NOT NULL,
+  "screenshots" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+  "comment" TEXT NOT NULL DEFAULT '',
+  "status" TEXT NOT NULL DEFAULT 'pending',
+  "ip" TEXT NOT NULL DEFAULT '',
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS "BotCheck_scammerId_status_idx" ON "BotCheck"("scammerId","status");
+CREATE INDEX IF NOT EXISTS "BotCheck_status_createdAt_idx" ON "BotCheck"("status","createdAt");
+```
+
+Статуси ботів: подано → «На модерації»; кнопка «Перевіряю» в адмінці → «На перевірці»; «Схвалити» → остаточно (з'являється кнопка апеляції).

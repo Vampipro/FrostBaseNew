@@ -17,9 +17,10 @@ export async function POST(req: Request) {
   if (shots.length > 10 || shots.some((s) => s.length > 500 || !isHttpUrl(s))) return fail("Скріншоти: до 10 коректних посилань http(s)");
   const [enabled, sc] = await Promise.all([
     getSetting<boolean>("appeals_enabled", true),
-    prisma.scammer.findUnique({ where: { id: scammerId }, select: { appealsDisabled: true, moderation: true } }),
+    prisma.scammer.findUnique({ where: { id: scammerId }, select: { appealsDisabled: true, moderation: true, botCheck: true } }),
   ]);
   if (!sc || sc.moderation === "rejected") return fail("Не знайдено", 404);
+  if (sc.botCheck && sc.moderation !== "approved") return fail("Апеляція доступна після підтвердження перевірки бота", 403);
   if (!enabled || sc.appealsDisabled) return fail("Подача апеляції для цього запису недоступна", 403);
   if (!(await consume("appeal", ip, 3, 24 * 3600_000))) return fail("Ліміт апеляцій з цього IP вичерпано. Спробуй завтра.", 429);
   const user = await currentUser();

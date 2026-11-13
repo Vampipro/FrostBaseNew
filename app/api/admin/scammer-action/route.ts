@@ -11,14 +11,14 @@ export async function POST(req: Request) {
 
   if (action === "approve") {
     await prisma.$transaction([
-      prisma.scammer.update({ where: { id: sc.id }, data: { moderation: "approved" } }),
+      prisma.scammer.update({ where: { id: sc.id }, data: { moderation: "approved", checking: false } }),
       prisma.submission.updateMany({ where: { scammerId: sc.id, status: { in: ["pending", "revision"] } }, data: { status: "approved" } }),
     ]);
     return ok({ ok: true });
   }
   if (action === "reject") {
     await prisma.$transaction([
-      prisma.scammer.update({ where: { id: sc.id }, data: { moderation: "rejected" } }),
+      prisma.scammer.update({ where: { id: sc.id }, data: { moderation: "rejected", checking: false } }),
       prisma.submission.updateMany({ where: { scammerId: sc.id, status: { in: ["pending", "revision"] } }, data: { status: "rejected", revisionReason: String(reason ?? "").slice(0, 300) } }),
     ]);
     return ok({ ok: true });
@@ -39,6 +39,11 @@ export async function POST(req: Request) {
       prisma.scammer.delete({ where: { id: sc.id } }),
     ]);
     return ok({ ok: true, mergedInto: tid });
+  }
+  if (action === "check" || action === "uncheck") {
+    if (!sc.botCheck || sc.moderation !== "pending") return fail("Доступно лише для ботів на модерації");
+    await prisma.scammer.update({ where: { id: sc.id }, data: { checking: action === "check" } });
+    return ok({ ok: true });
   }
   return fail("Невідома дія");
 }

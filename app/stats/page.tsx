@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, useApp } from "@/components/Providers";
-import ScammerCard from "@/components/ScammerCard";
+import ScammerCard, { avatarGrad } from "@/components/ScammerCard";
 import ScammerView from "@/components/ScammerView";
 import Modal from "@/components/Modal";
 import { tr } from "@/lib/i18n";
@@ -10,7 +10,7 @@ import { uname } from "@/lib/name";
 const fmt = (n: number) => String(n ?? 0).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
 export default function StatsPage() {
-  const { t, lang } = useApp();
+  const { t, lang, theme } = useApp();
   const [s, setS] = useState<any>(null);
   const [openId, setOpenId] = useState<number | null>(null);
   useEffect(() => { api("/api/stats").then((r) => r.totals && setS(r)); }, []);
@@ -34,16 +34,53 @@ export default function StatsPage() {
       </div>
     ));
   };
-  const list = (title: string, rows: any[]) => (
-    <div className="panel">
-      <h3 className="sub-title" style={{ marginTop: 0 }}>{title}</h3>
-      <ol className="toplist">
-        {rows.map((r) => (
-          <li key={r.id}><button className="link-btn" onClick={() => setOpenId(r.id)}>{uname(r.name)}</button><span>👁 {r.viewCount} · 🔍 {r.searchCount} · 👍 {r.likeCount}</span></li>
-        ))}
-      </ol>
-    </div>
-  );
+  const MEDAL = ["🥇", "🥈", "🥉"];
+  // Лідерборд: місце/медаль, аватар, ім'я, шкала відносно лідера і значення
+  const board = (title: string, rows: any[], metric: string, icon: string) => {
+    const m = Math.max(1, ...rows.map((r) => Number(r[metric]) || 0));
+    return (
+      <div className="panel lb-panel">
+        <h3 className="sub-title" style={{ marginTop: 0 }}>{title}</h3>
+        <ol className="lb">
+          {rows.map((r, i) => (
+            <li key={r.id}>
+              <button className={"lb-row" + (i < 3 ? " top top" + (i + 1) : "")} onClick={() => setOpenId(r.id)}>
+                <span className="lb-pos">{i < 3 ? MEDAL[i] : i + 1}</span>
+                <span className="lb-av" style={{ background: avatarGrad(uname(r.name), theme) }}>{uname(r.name)[0]?.toUpperCase()}</span>
+                <span className="lb-main">
+                  <b className="lb-name">{uname(r.name)}</b>
+                  <span className="lb-bar"><i style={{ width: Math.max(4, ((Number(r[metric]) || 0) / m) * 100) + "%" }} /></span>
+                </span>
+                <span className="lb-val">{icon} {fmt(Number(r[metric]) || 0)}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </div>
+    );
+  };
+  const queryBoard = (rows: any[]) => {
+    const m = Math.max(1, ...rows.map((r) => Number(r.count) || 0));
+    return (
+      <div className="panel lb-panel">
+        <h3 className="sub-title" style={{ marginTop: 0 }}>{t("st_top_queries")}</h3>
+        <ol className="lb">
+          {rows.map((x, i) => (
+            <li key={x.query}>
+              <div className={"lb-row static" + (i < 3 ? " top top" + (i + 1) : "")}>
+                <span className="lb-pos">{i < 3 ? MEDAL[i] : i + 1}</span>
+                <span className="lb-main">
+                  <b className="lb-name">{x.query}</b>
+                  <span className="lb-bar"><i style={{ width: Math.max(4, (Number(x.count) / m) * 100) + "%" }} /></span>
+                </span>
+                <span className="lb-val">🔍 {fmt(Number(x.count) || 0)}</span>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    );
+  };
 
   return (
     <main className="page">
@@ -77,13 +114,10 @@ export default function StatsPage() {
       </div>
 
       <div className="two-col" style={{ marginTop: 16 }}>
-        {list(t("st_top_searched"), s.topSearched)}
-        {list(t("st_top_viewed"), s.topViewed)}
-        {list(t("st_top_liked"), s.topLiked)}
-        <div className="panel">
-          <h3 className="sub-title" style={{ marginTop: 0 }}>{t("st_top_queries")}</h3>
-          <ol className="toplist">{s.topQueries.map((x: any) => <li key={x.query}><span>{x.query}</span><span>{x.count}</span></li>)}</ol>
-        </div>
+        {board(t("st_top_searched"), s.topSearched, "searchCount", "🔍")}
+        {board(t("st_top_viewed"), s.topViewed, "viewCount", "👁")}
+        {board(t("st_top_liked"), s.topLiked, "likeCount", "👍")}
+        {queryBoard(s.topQueries)}
       </div>
 
       <h3 className="zone-title"><span className="zt-ico">❄</span><span>{t("st_latest")}</span></h3>

@@ -4,6 +4,7 @@ import { currentUser } from "@/lib/auth";
 import { consume, getLimits, isBanned } from "@/lib/guard";
 import { isTgId } from "@/lib/name";
 import { clean } from "@/lib/name";
+import { findBotType } from "@/lib/bot";
 
 export async function POST(req: Request) {
   const b = await readBody(req);
@@ -25,7 +26,9 @@ export async function POST(req: Request) {
   if (!isBot && (!status || status.hidden || !status.showInForm)) return fail("Обери тег зі списку");
 
   const shots: string[] = Array.isArray(b.screenshots) ? b.screenshots.map((s: any) => String(s).trim()).filter(Boolean) : [];
-  if (!isBot && shots.length < 1) return fail("Додай хоча б одне посилання на скріншот");
+  const proof = str(b.proofLink, 500); // «докази» = резервна копія, скріншоти = оригінал
+  if (proof && !isHttpUrl(proof)) return fail("Докази (резерв): має бути посилання http(s)");
+  if (!isBot && shots.length < 1 && !proof) return fail("Додай скріншоти (оригінал) або посилання на докази (резерв)");
   if (shots.length > 10 || shots.some((s) => s.length > 500 || !isHttpUrl(s))) return fail("Скріншоти: до 10 коректних посилань http(s)");
 
   const wantContact = b.wantContact === true;
@@ -36,20 +39,21 @@ export async function POST(req: Request) {
   const amount = parseAmount(amountRaw);
   if (amountRaw && amount === null) return fail("Сума має бути числом");
 
-  const botReward = str(b.botReward, 80);
   const sponsorsRaw = str(b.botSponsors, 6);
-  const botUsage = str(b.botUsage, 60);
+  const usageRaw = str(b.botUsage, 9);
+  const currency = str(b.scamCurrency, 24);
   if (isBot) {
-    if (!botReward) return fail("Вкажіть нагороду");
+    if (amount === null) return fail("Вкажіть нагороду (сума)");
+    if (!currency) return fail("Вкажіть валюту нагороди");
     if (!/^\d{1,5}$/.test(sponsorsRaw)) return fail("Кількість спонсорів: ціле число");
-    if (!botUsage) return fail("Вкажіть приблизне використання бота");
+    if (!/^\d{1,9}$/.test(usageRaw)) return fail("Приблизне використання: кількість користувачів (число)");
     const exists = await prisma.scammer.findFirst({
       where: { botCheck: true, moderation: { in: ["pending", "approved"] }, name: { equals: username, mode: "insensitive" } },
       select: { id: true },
     });
     if (exists) return fail("Цей бот уже поданий на перевірку", 409);
   }
-  const botType = isBot ? await prisma.scammerType.findUnique({ where: { key: "bot" } }) : null;
+  const botType = isBot ? await findBotType() : null;
 
   const limits = await getLimits();
   const windowMs = limits.submissionsWindowHours * 3600_000;
@@ -76,8 +80,9 @@ export async function POST(req: Request) {
         scamAmount: amount,
         scamCurrency: str(b.scamCurrency, 24),
         screenshots: shots,
+        proofLink: proof,
         statuses: { create: !isBot && status ? [{ statusId: status.id }] : [] },
-        ...(isBot ? { botCheck: true, botReward, botSponsors: Number(sponsorsRaw), botUsage, typeId: botType?.id ?? null } : {}),
+        ...(isBot ? { botCheck: true, botReward: `${amountRaw} ${currency}`.trim(), botSponsors: Number(sponsorsRaw), botUsage: usageRaw, typeId: botType?.id ?? null } : {}),
       },
     });
     await tx.submission.create({

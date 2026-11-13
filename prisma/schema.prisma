@@ -27,6 +27,7 @@ model User {
   appeals        Appeal[]
   commentReports CommentReport[]
   searchLogs     SearchLog[]
+  botChecks      BotCheck[]
 }
 
 // ---------- Скамери ----------
@@ -49,6 +50,7 @@ model Scammer {
   botReward       String    @default("")
   botSponsors     Int?
   botUsage        String    @default("")
+  checking        Boolean   @default(false) // бот узятий персоналом «на перевірку» (інакше — просто «на модерації»)
   searchCount     Int       @default(0)
   viewCount       Int       @default(0)
   likeCount       Int       @default(0)
@@ -65,6 +67,7 @@ model Scammer {
   votes       Vote[]
   appeals     Appeal[]
   searchLogs  SearchLog[]
+  botChecks   BotCheck[]
 
   @@index([name])
   @@index([telegramUserId])
@@ -255,4 +258,23 @@ model Setting {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
+}
+
+// Перевірки ботів від користувачів (вердикт + скріншоти). Показуються лише після схвалення персоналом.
+model BotCheck {
+  id          Int      @id @default(autoincrement())
+  scammerId   Int
+  userId      Int?
+  verdict     String // "paid" | "partial" | "not_paid"
+  screenshots String[] @default([])
+  comment     String   @default("")
+  status      String   @default("pending") // "pending" | "approved" | "rejected"
+  ip          String   @default("")
+  createdAt   DateTime @default(now())
+
+  scammer Scammer @relation(fields: [scammerId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([scammerId, status])
+  @@index([status, createdAt])
 }

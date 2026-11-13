@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { api, useApp } from "@/components/Providers";
 import { tr } from "@/lib/i18n";
 
-const EMPTY = { username: "", telegramId: "", statusId: "", shots: "", description: "", scamAmount: "", scamCurrency: "", wantContact: false, contactUsername: "", website: "", botReward: "", botSponsors: "", botUsage: "" };
+const EMPTY = { username: "", telegramId: "", statusId: "", shots: "", proofLink: "", description: "", scamAmount: "", scamCurrency: "", wantContact: false, contactUsername: "", website: "", botSponsors: "", botUsage: "" };
 
 export default function ReportPage() {
   const { t, lang, toast } = useApp();
@@ -22,13 +22,14 @@ export default function ReportPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBusy(true);
     const shots = f.shots.split("\n").map((x) => x.trim()).filter(Boolean);
-    const common = { username: f.username, screenshots: shots, description: f.description, wantContact: f.wantContact, contactUsername: f.contactUsername, website: f.website };
+    if (!isBot && shots.length === 0 && !f.proofLink.trim()) return toast(t("r_proofs_hint"));
+    setBusy(true);
+    const common = { username: f.username, screenshots: shots, proofLink: f.proofLink.trim(), description: f.description, scamAmount: f.scamAmount, scamCurrency: f.scamCurrency, wantContact: f.wantContact, contactUsername: f.contactUsername, website: f.website };
     const r = await api("/api/submissions", {
       body: isBot
-        ? { ...common, kind: "bot", botReward: f.botReward, botSponsors: f.botSponsors, botUsage: f.botUsage }
-        : { ...common, telegramId: f.telegramId, statusId: Number(f.statusId), scamAmount: f.scamAmount, scamCurrency: f.scamCurrency },
+        ? { ...common, kind: "bot", botSponsors: f.botSponsors, botUsage: f.botUsage }
+        : { ...common, telegramId: f.telegramId, statusId: Number(f.statusId) },
     });
     setBusy(false);
     if (r.error) return toast(r.error);
@@ -37,6 +38,14 @@ export default function ReportPage() {
 
   if (done) return (
     <main className="page"><div className="panel narrow"><h2 className="zone-title">✓ {t(isBot ? "r_bot_title" : "r_title")}</h2><p className="desc">{t("r_ok")}</p><button className="btn" onClick={() => { setDone(false); setF({ ...EMPTY }); }}>{t("report_again")}</button></div></main>
+  );
+
+  const proofs = (
+    <>
+      <label className="field"><span>{t("r_shots_orig")}</span><textarea rows={isBot ? 3 : 4} value={f.shots} onChange={(e) => set("shots", e.target.value)} placeholder="https://t.me/..." /></label>
+      <label className="field"><span>{t("r_proof_reserve")}</span><input value={f.proofLink} onChange={(e) => set("proofLink", e.target.value)} maxLength={500} placeholder="https://..." /></label>
+      {!isBot && <div className="hint">{t("r_proofs_hint")}</div>}
+    </>
   );
 
   return (
@@ -52,13 +61,16 @@ export default function ReportPage() {
           <>
             <div className="hint">{t("r_bot_hint")}</div>
             <label className="field"><span>{t("r_bot_username")} *</span><input required value={f.username} onChange={(e) => set("username", e.target.value)} maxLength={64} placeholder="@example_bot" /></label>
-            <label className="field"><span>{t("r_bot_reward")} *</span><input required value={f.botReward} onChange={(e) => set("botReward", e.target.value)} maxLength={80} placeholder={t("r_bot_reward_ph")} /></label>
+            <div className="row2">
+              <label className="field"><span>{t("r_bot_amount")} *</span><input required value={f.scamAmount} onChange={(e) => set("scamAmount", e.target.value)} inputMode="decimal" maxLength={24} placeholder="0.5" /></label>
+              <label className="field"><span>{t("r_bot_currency")} *</span><input required value={f.scamCurrency} onChange={(e) => set("scamCurrency", e.target.value)} maxLength={24} placeholder="TON / USDT / ₴" /></label>
+            </div>
             <div className="row2">
               <label className="field"><span>{t("r_bot_sponsors")} *</span><input required value={f.botSponsors} onChange={(e) => set("botSponsors", e.target.value.replace(/\D/g, ""))} inputMode="numeric" maxLength={5} placeholder="3" /></label>
-              <label className="field"><span>{t("r_bot_usage")} *</span><input required value={f.botUsage} onChange={(e) => set("botUsage", e.target.value)} maxLength={60} placeholder={t("r_bot_usage_ph")} /></label>
+              <label className="field"><span>{t("r_bot_usage")} *</span><input required value={f.botUsage} onChange={(e) => set("botUsage", e.target.value.replace(/\D/g, ""))} inputMode="numeric" maxLength={9} placeholder="5000" /></label>
             </div>
             <label className="field"><span>{t("r_bot_desc")}</span><textarea rows={3} maxLength={2000} value={f.description} onChange={(e) => set("description", e.target.value)} /></label>
-            <label className="field"><span>{t("r_shots")}</span><textarea rows={3} value={f.shots} onChange={(e) => set("shots", e.target.value)} placeholder="https://t.me/..." /></label>
+            {proofs}
           </>
         ) : (
           <>
@@ -74,7 +86,7 @@ export default function ReportPage() {
                 {statuses.map((s: any) => <option key={s.id} value={s.id}>{tr(s, lang)}</option>)}
               </select>
             </label>
-            <label className="field"><span>{t("r_shots")} *</span><textarea required rows={4} value={f.shots} onChange={(e) => set("shots", e.target.value)} placeholder="https://t.me/..." /></label>
+            {proofs}
             <label className="field"><span>{t("r_desc")}</span><textarea rows={4} maxLength={2000} value={f.description} onChange={(e) => set("description", e.target.value)} /></label>
             <div className="row2">
               <label className="field"><span>{t("r_amount")}</span><input value={f.scamAmount} onChange={(e) => set("scamAmount", e.target.value)} inputMode="decimal" maxLength={24} /></label>
