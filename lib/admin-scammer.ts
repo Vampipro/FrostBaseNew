@@ -27,6 +27,7 @@ export function scammerData(b: any): { data?: any; error?: string } {
     d.descriptionI18n = v;
   }
   if ("botCheck" in b) d.botCheck = !!b.botCheck;
+  if ("checking" in b) d.checking = !!b.checking;
   if ("botReward" in b) d.botReward = s(b.botReward, 80);
   if ("botUsage" in b) d.botUsage = s(b.botUsage, 60);
   if ("botSponsors" in b) {
@@ -62,13 +63,6 @@ export function scammerData(b: any): { data?: any; error?: string } {
     const arr = Array.isArray(b.screenshots) ? b.screenshots.map((x: any) => String(x).trim()).filter(Boolean) : [];
     if (arr.some((x: string) => !isHttpUrl(x))) return { error: "Скріншоти мають бути http(s)-посиланнями" };
     d.screenshots = arr;
-  }
-  for (const f of ["likeCount", "neutralCount", "dislikeCount", "viewCount", "searchCount"]) {
-    if (f in b) {
-      const n = Number(b[f]);
-      if (!Number.isInteger(n) || n < 0 || n > 1e9) return { error: `${f}: ціле число ≥ 0` };
-      d[f] = n;
-    }
   }
   return { data: d };
 }

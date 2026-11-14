@@ -64,7 +64,9 @@ export function Topbar() {
         <span className="brand">FROST<span className="brand-accent">BASE</span></span>
       </Link>
       <nav className={"main-nav" + (open ? " open" : "")} onClick={() => setOpen(false)}>
-        <Link href="/">{t("nav_search")}</Link>
+        {/* Use a full document navigation here to avoid stale App Router state
+            when returning from the statistics page to the search page. */}
+        <a href="/">{t("nav_search")}</a>
         <Link href="/report">{t("nav_report")}</Link>
         <Link href="/stats">{t("nav_stats")}</Link>
         {staff && <Link href="/admin">{t("nav_admin")}</Link>}

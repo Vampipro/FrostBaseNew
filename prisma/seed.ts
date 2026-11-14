@@ -1,13 +1,14 @@
 import { PrismaClient } from "@prisma/client";
+import { SCAMMER_TYPE_KEYS } from "../lib/scammer-type";
 
 const prisma = new PrismaClient();
 
 async function main() {
   // Типи (фільтр у пошуку)
   const types = [
-    { key: "human", label: "Людина", translations: { ua: "Людина", en: "Human", ru: "Человек" }, sortOrder: 1 },
-    { key: "bot", label: "Бот", translations: { ua: "Бот", en: "Bot", ru: "Бот" }, sortOrder: 2 },
-    { key: "nft", label: "NFT", translations: { ua: "NFT", en: "NFT", ru: "NFT" }, sortOrder: 3 },
+    { key: SCAMMER_TYPE_KEYS.HUMAN, label: "Людина", translations: { ua: "Людина", en: "Human", ru: "Человек" }, sortOrder: 1 },
+    { key: SCAMMER_TYPE_KEYS.BOT, label: "Бот", translations: { ua: "Бот", en: "Bot", ru: "Бот" }, sortOrder: 2 },
+    { key: SCAMMER_TYPE_KEYS.NFT, label: "NFT", translations: { ua: "NFT", en: "NFT", ru: "NFT" }, sortOrder: 3 },
   ];
   for (const t of types) {
     await prisma.scammerType.upsert({ where: { key: t.key }, update: {}, create: t });

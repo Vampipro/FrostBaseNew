@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const id = toInt(new URL(req.url).searchParams.get("id"));
   if (!id) return fail("Не знайдено", 404);
-  const s = await prisma.scammer.findFirst({ where: { id, moderation: { in: ["approved", "pending"] } }, include: cardInclude });
+  const s = await prisma.scammer.findFirst({ where: { id, moderation: { in: ["approved", "pending"] } }, include: { ...cardInclude, nameHistory: { orderBy: [{ createdAt: "asc" }, { id: "asc" }], select: { id: true, oldName: true, newName: true, createdAt: true } } } });
   if (!s) return fail("Не знайдено", 404);
   const ip = getIp(req);
   if (memOnce(`v:${id}:${ip}`, 10 * 60_000)) {
@@ -39,6 +39,7 @@ export async function GET(req: Request) {
   ]);
   return ok({
     ...toCard(s),
+    usernameHistory: s.nameHistory,
     description: s.description,
     descriptionI18n: s.descriptionI18n ?? {},
     screenshots: s.screenshots,
