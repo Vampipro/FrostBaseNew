@@ -59,28 +59,7 @@ export default function StatsPage() {
       </div>
     );
   };
-  const queryBoard = (rows: any[]) => {
-    const m = Math.max(1, ...rows.map((r) => Number(r.count) || 0));
-    return (
-      <div className="panel lb-panel">
-        <h3 className="sub-title" style={{ marginTop: 0 }}>{t("st_top_queries")}</h3>
-        <ol className="lb">
-          {rows.map((x, i) => (
-            <li key={x.query}>
-              <div className={"lb-row static" + (i < 3 ? " top top" + (i + 1) : "")}>
-                <span className="lb-pos">{i < 3 ? MEDAL[i] : i + 1}</span>
-                <span className="lb-main">
-                  <b className="lb-name">{x.query}</b>
-                  <span className="lb-bar"><i style={{ width: Math.max(4, (Number(x.count) / m) * 100) + "%" }} /></span>
-                </span>
-                <span className="lb-val">🔍 {fmt(Number(x.count) || 0)}</span>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </div>
-    );
-  };
+
 
   return (
     <main className="page">
@@ -117,7 +96,6 @@ export default function StatsPage() {
         {board(t("st_top_searched"), s.topSearched, "searchCount", "🔍")}
         {board(t("st_top_viewed"), s.topViewed, "viewCount", "👁")}
         {board(t("st_top_liked"), s.topLiked, "likeCount", "👍")}
-        {queryBoard(s.topQueries)}
       </div>
 
       <h3 className="zone-title"><span className="zt-ico">❄</span><span>{t("st_latest")}</span></h3>
