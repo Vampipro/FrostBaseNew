@@ -147,6 +147,7 @@ export default function Moderation({ databaseMode = false }: { databaseMode?: bo
   const [statuses, setStatuses] = useState<any[]>([]);
   const [types, setTypes] = useState<any[]>([]);
   const [edit, setEdit] = useState<any | null | undefined>(undefined); // undefined=закрито, null=новий
+  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
 
   const load = useCallback(async () => {
     const p = new URLSearchParams({ status, sort, dir, q, page: String(page) });
@@ -206,41 +207,70 @@ export default function Moderation({ databaseMode = false }: { databaseMode?: bo
       {!data ? <div className="empty-sub">{tt("Завантаження…", "Loading…", "Загрузка…")}</div> : data.error ? <div className="empty-sub">{data.error}</div> : (
         <>
           <div className="c-date">{tt("Знайдено", "Found", "Найдено")}: {data.total}</div>
-          {data.items.map((s: any) => (
-            <div className="panel admin-item" key={s.id}>
-              <div className="admin-head">
-                <b>#{s.id} {uname(s.name)}</b>{s.telegramUserId && <span className="c-id">ID {s.telegramUserId}</span>}
-                <Badges s={s} />{s.type && <span className="mini-tag">{s.type.label}</span>}
-                <span className="c-date">{fmtDate(s.submittedAt ?? s.createdAt, lang)}</span>
-              </div>
-              <div className="c-date">👍 {s.likeCount} · 😐 {s.neutralCount} · 👎 {s.dislikeCount} · 👁 {s.viewCount} · 🔍 {s.searchCount} · {tt("скарг", "reports", "жалоб")}: {s.complaints}{s.appealsDisabled ? ` · ${tt("апеляції заборонені", "appeals disabled", "апелляции запрещены")}` : ""}</div>
-              {s.botCheck && <div className="c-bot"><span>🤖 {tt("Перевірка бота", "Bot check", "Проверка бота")}</span>{s.botReward && <span>🎁 {s.botReward}</span>}{s.botSponsors != null && <span>🤝 {s.botSponsors}</span>}{s.botUsage && <span>👥 {Number(s.botUsage).toLocaleString("ru-RU")}</span>}</div>}
-              {s.similar?.length > 0 && (
-                <div className="warn-box">
-                  ⚠ {tt("Схожі записи в базі", "Similar entries in the database", "Похожие записи в базе")}:{" "}
-                  {s.similar.map((x: any) => (
-                    <span key={x.id} className="sim-link">#{x.id} {uname(x.name)} {x.exact ? tt("(точний збіг)", "(exact match)", "(точное совпадение)") : ""}<button className="link-btn" onClick={() => mergePrompt(s.id, String(x.id))}>{tt("об'єднати", "merge", "объединить")}</button></span>
-                  ))}
+          {data.items.map((s: any) => {
+            const expanded = !databaseMode || !!expandedRows[s.id];
+            const detailsId = `admin-entry-${s.id}-details`;
+            return (
+              <div className={`panel admin-item${databaseMode ? " admin-item-compact" : ""}`} key={s.id}>
+                <div className="admin-item-summary">
+                  <div className="admin-head">
+                    <b>#{s.id} {uname(s.name)}</b>{s.telegramUserId && <span className="c-id">ID {s.telegramUserId}</span>}
+                    <Badges s={s} />{s.type && <span className="mini-tag">{s.type.label}</span>}
+                    <span className="c-date">{fmtDate(s.submittedAt ?? s.createdAt, lang)}</span>
+                    {databaseMode && (
+                      <button
+                        type="button"
+                        className="btn ghost admin-item-toggle"
+                        aria-expanded={!!expandedRows[s.id]}
+                        aria-controls={detailsId}
+                        onClick={() => setExpandedRows((rows) => ({ ...rows, [s.id]: !rows[s.id] }))}
+                      >
+                        {expandedRows[s.id] ? tt("Згорнути", "Collapse", "Свернуть") : tt("Переглянути", "View", "Просмотреть")}
+                        <span aria-hidden="true">{expandedRows[s.id] ? "⌃" : "⌄"}</span>
+                      </button>
+                    )}
+                  </div>
+                  <div className="c-date">👍 {s.likeCount} · 😐 {s.neutralCount} · 👎 {s.dislikeCount} · 👁 {s.viewCount} · 🔍 {s.searchCount} · {tt("скарг", "reports", "жалоб")}: {s.complaints}{s.appealsDisabled ? ` · ${tt("апеляції заборонені", "appeals disabled", "апелляции запрещены")}` : ""}</div>
+                  {databaseMode && (
+                    <div className="admin-item-summary-meta">
+                      <span>📎 {s.screenshots?.length || 0} {tt("доказів", "evidence", "доказательств")}</span>
+                      {s.proofLink && <span>🔗 {tt("є резервний доказ", "backup evidence", "есть резервное доказательство")}</span>}
+                      {s.botCheck && <span>🤖 {tt("перевірка бота", "bot check", "проверка бота")}</span>}
+                    </div>
+                  )}
                 </div>
-              )}
-              {s.description && <p className="desc">{pickDesc(s, lang)}</p>}
-              {s.screenshots.length > 0 && <EvidenceGallery items={s.screenshots} title={tt("Оригінальні докази", "Original evidence", "Оригинальные доказательства")} compact />}
-              {s.proofLink && <EvidenceGallery items={[s.proofLink]} title={tt("Резервний доказ", "Backup evidence", "Резервное доказательство")} compact />}
-              {s.submissions.map((x: any) => (
-                <div className="c-date" key={x.id}>{tt("Заявка", "Submission", "Заявка")} #{x.id} · IP {x.ip || "—"} {x.ip && <button className="link-btn" onClick={() => ban(x.ip)}>{tt("бан IP", "ban IP", "бан IP")}</button>}{x.contactUsername && <> · {tt("зв'язок", "contact", "связь")}: @{x.contactUsername}</>}</div>
-              ))}
-              <div className="modal-actions" style={{ marginTop: 10 }}>
-                {s.botCheck && s.moderation === "pending" && (s.checking
-                  ? <button className="btn ghost" onClick={() => act(s.id, "uncheck")}>{tt("Зняти з перевірки", "Take off check", "Снять с проверки")}</button>
-                  : <button className="btn ghost" onClick={() => act(s.id, "check")}>{tt("Перевіряю", "I'm checking", "Проверяю")}</button>)}
-                {s.moderation !== "approved" && <button className="btn" onClick={() => act(s.id, "approve")}>{tt("Схвалити", "Approve", "Одобрить")}</button>}
-                {s.moderation !== "rejected" && <button className="btn ghost danger" onClick={() => { const r = window.prompt(tt("Причина відхилення (необов'язково):", "Rejection reason (optional):", "Причина отклонения (необязательно):"), ""); if (r !== null) act(s.id, "reject", { reason: r }); }}>{tt("Відхилити", "Reject", "Отклонить")}</button>}
-                <button className="btn ghost" onClick={() => setEdit(s)}>{tt("Редагувати", "Edit", "Редактировать")}</button>
-                <button className="btn ghost" onClick={() => mergePrompt(s.id)}>{tt("Об'єднати", "Merge", "Объединить")}</button>
-                <button className="btn ghost danger" onClick={() => del(s.id)}>{tt("Видалити", "Delete", "Удалить")}</button>
+                {expanded && (
+                  <div className={databaseMode ? "admin-item-details" : undefined} id={databaseMode ? detailsId : undefined}>
+                    {s.botCheck && <div className="c-bot"><span>🤖 {tt("Перевірка бота", "Bot check", "Проверка бота")}</span>{s.botReward && <span>🎁 {s.botReward}</span>}{s.botSponsors != null && <span>🤝 {s.botSponsors}</span>}{s.botUsage && <span>👥 {Number(s.botUsage).toLocaleString("ru-RU")}</span>}</div>}
+                    {s.similar?.length > 0 && (
+                      <div className="warn-box">
+                        ⚠ {tt("Схожі записи в базі", "Similar entries in the database", "Похожие записи в базе")}: {" "}
+                        {s.similar.map((x: any) => (
+                          <span key={x.id} className="sim-link">#{x.id} {uname(x.name)} {x.exact ? tt("(точний збіг)", "(exact match)", "(точное совпадение)") : ""}<button className="link-btn" onClick={() => mergePrompt(s.id, String(x.id))}>{tt("об'єднати", "merge", "объединить")}</button></span>
+                        ))}
+                      </div>
+                    )}
+                    {s.description && <p className="desc">{pickDesc(s, lang)}</p>}
+                    {s.screenshots?.length > 0 && <EvidenceGallery items={s.screenshots} title={tt("Оригінальні докази", "Original evidence", "Оригинальные доказательства")} compact />}
+                    {s.proofLink && <EvidenceGallery items={[s.proofLink]} title={tt("Резервний доказ", "Backup evidence", "Резервное доказательство")} compact />}
+                    {(s.submissions || []).map((x: any) => (
+                      <div className="c-date" key={x.id}>{tt("Заявка", "Submission", "Заявка")} #{x.id} · IP {x.ip || "—"} {x.ip && <button className="link-btn" onClick={() => ban(x.ip)}>{tt("бан IP", "ban IP", "бан IP")}</button>}{x.contactUsername && <> · {tt("зв'язок", "contact", "связь")}: @{x.contactUsername}</>}</div>
+                    ))}
+                    <div className="modal-actions" style={{ marginTop: 10 }}>
+                      {s.botCheck && s.moderation === "pending" && (s.checking
+                        ? <button className="btn ghost" onClick={() => act(s.id, "uncheck")}>{tt("Зняти з перевірки", "Take off check", "Снять с проверки")}</button>
+                        : <button className="btn ghost" onClick={() => act(s.id, "check")}>{tt("Перевіряю", "I'm checking", "Проверяю")}</button>)}
+                      {s.moderation !== "approved" && <button className="btn" onClick={() => act(s.id, "approve")}>{tt("Схвалити", "Approve", "Одобрить")}</button>}
+                      {s.moderation !== "rejected" && <button className="btn ghost danger" onClick={() => { const r = window.prompt(tt("Причина відхилення (необов'язково):", "Rejection reason (optional):", "Причина отклонения (необязательно):"), ""); if (r !== null) act(s.id, "reject", { reason: r }); }}>{tt("Відхилити", "Reject", "Отклонить")}</button>}
+                      <button className="btn ghost" onClick={() => setEdit(s)}>{tt("Редагувати", "Edit", "Редактировать")}</button>
+                      <button className="btn ghost" onClick={() => mergePrompt(s.id)}>{tt("Об'єднати", "Merge", "Объединить")}</button>
+                      <button className="btn ghost danger" onClick={() => del(s.id)}>{tt("Видалити", "Delete", "Удалить")}</button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
           {data.items.length === 0 && <div className="empty-sub">{tt("Порожньо", "Empty", "Пусто")}</div>}
           <button className="add-block" onClick={() => setEdit(null)}>{tt("+ Додати запис", "+ Add entry", "+ Добавить запись")}</button>
           {data.pages > 1 && (

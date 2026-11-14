@@ -389,6 +389,16 @@ kbd{border:1px solid var(--line);padding:1px 6px;font-size:10px;color:var(--acc)
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
 .toolbar>*{width:auto;min-width:150px}
 .admin-item{margin:12px 0;padding:18px}
+.admin-item-compact{margin:8px 0;padding:12px 15px;clip-path:none;transition:border-color .18s,background .18s,box-shadow .18s}
+.admin-item-compact:hover{border-color:var(--acc);box-shadow:0 5px 22px rgba(0,0,0,.14)}
+.admin-item-summary{display:flex;flex-direction:column;gap:5px;min-width:0}
+.admin-item-compact .admin-head{align-items:center;gap:8px;margin:0}
+.admin-item-compact .admin-head b{font-size:12px;overflow-wrap:anywhere}
+.admin-item-compact .admin-head>.c-date{margin-left:auto;white-space:nowrap}
+.admin-item-toggle{flex:none;margin-left:4px;padding:7px 11px!important;font-size:10px!important;letter-spacing:.6px!important;gap:9px}
+.admin-item-toggle span{font-size:14px;line-height:1}
+.admin-item-summary-meta{display:flex;gap:12px;flex-wrap:wrap;color:var(--dim);font-size:10px}
+.admin-item-details{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);animation:mIn .18s ease both}
 .admin-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
 .warn-box{margin:8px 0;padding:8px 12px;border:1px solid #ffc857;color:#ffc857;font-size:12px;background:rgba(255,200,87,.08)}
 .sim-link{margin-right:12px;display:inline-flex;gap:6px;align-items:center}
@@ -790,5 +800,5 @@ html[data-lite="on"] .dict-card:hover { transform: none; box-shadow: none; }
 .username-history-note{padding:0 14px;margin:0 0 8px}
 .username-history-list{padding:0 12px 12px;margin:0}
 .danger-text{color:#ff7777!important}
-@media(max-width:620px){.scammer-db-heading{align-items:flex-start}.scammer-db-heading>span{font-size:8px}.admin-name-history{padding:10px}.admin-name-history-add{align-items:stretch;flex-direction:column}.admin-name-history-add .btn{width:100%}.admin-name-history-row,.username-history-row{align-items:flex-start;flex-direction:column}.admin-name-history-row button{align-self:flex-end}.username-history-row small{margin-left:0}}
+@media(max-width:620px){.admin-item-compact{padding:11px}.admin-item-compact .admin-head>.c-date{margin-left:0}.admin-item-toggle{margin-left:auto}.admin-item-summary-meta{gap:7px 10px}.scammer-db-heading{align-items:flex-start}.scammer-db-heading>span{font-size:8px}.admin-name-history{padding:10px}.admin-name-history-add{align-items:stretch;flex-direction:column}.admin-name-history-add .btn{width:100%}.admin-name-history-row,.username-history-row{align-items:flex-start;flex-direction:column}.admin-name-history-row button{align-self:flex-end}.username-history-row small{margin-left:0}}
 html[data-lite="on"] .admin-name-history,html[data-lite="on"] .username-history{animation:none!important}
