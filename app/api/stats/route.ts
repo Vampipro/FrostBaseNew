@@ -12,7 +12,7 @@ async function compute() {
   const day = 864e5;
   const now = Date.now();
   const vis = { moderation: { in: ["approved", "pending"] } };
-  const [approved, pending, submissions, sums, searchesTotal, searchesToday, searches7d, comments, users, appealsPending, byStatusRaw, byTypeRaw, statuses, types, topSearched, topViewed, topLiked, topQueriesRaw, perDay, latest, reportsPending] =
+  const [approved, pending, submissions, sums, searchesTotal, searchesToday, searches7d, comments, users, appealsPending, byStatusRaw, byTypeRaw, statuses, types, topSearched, topViewed, topLiked, perDay, latest, reportsPending] =
     await Promise.all([
       prisma.scammer.count({ where: { moderation: "approved" } }),
       prisma.scammer.count({ where: { moderation: "pending" } }),
@@ -31,7 +31,6 @@ async function compute() {
       prisma.scammer.findMany({ where: vis, orderBy: { searchCount: "desc" }, take: 10, include: cardInclude }),
       prisma.scammer.findMany({ where: vis, orderBy: { viewCount: "desc" }, take: 10, include: cardInclude }),
       prisma.scammer.findMany({ where: vis, orderBy: { likeCount: "desc" }, take: 10, include: cardInclude }),
-      prisma.searchLog.groupBy({ by: ["query"], where: { ...NOT_EVENT, createdAt: { gt: new Date(now - 30 * day) } }, _count: { _all: true }, orderBy: { _count: { query: "desc" } }, take: 15 }),
       prisma.$queryRaw<{ d: Date; c: number }[]>`SELECT date_trunc('day', "createdAt") AS d, count(*)::int AS c FROM "SearchLog" WHERE "createdAt" > now() - interval '14 days' AND "query" <> 'card_click' GROUP BY 1 ORDER BY 1`,
       prisma.scammer.findMany({ where: { moderation: "approved" }, orderBy: { createdAt: "desc" }, take: 8, include: cardInclude }),
       prisma.commentReport.count({ where: { status: "pending" } }),
@@ -52,7 +51,6 @@ async function compute() {
     topSearched: topSearched.map(toCard),
     topViewed: topViewed.map(toCard),
     topLiked: topLiked.map(toCard),
-    topQueries: topQueriesRaw.map((r) => ({ query: r.query, count: r._count._all })),
     perDay: Array.from({ length: 14 }, (_, i) => {
       const d = new Date(now - (13 - i) * day);
       const key = d.toISOString().slice(0, 10);
