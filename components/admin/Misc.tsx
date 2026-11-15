@@ -7,6 +7,7 @@ import EvidenceGallery from "@/components/EvidenceGallery";
 import { uname } from "@/lib/name";
 import { useTT } from "./tt";
 import AiTranslate from "./AiTranslate";
+import { Editor } from "./Moderation";
 
 export function Comments() {
   const { toast, lang } = useApp();
@@ -60,6 +61,30 @@ export function Appeals() {
   const load = useCallback(async () => { const r = await api("/api/admin/appeals?status=" + status); setRows(Array.isArray(r) ? r : []); }, [status]);
   useEffect(() => { load(); }, [load]);
   const set = async (id: number, s: string) => { const r = await api("/api/admin/appeals", { method: "PATCH", body: { id, status: s } }); toast(r.error || tt("Готово", "Done", "Готово")); load(); };
+  const [statuses, setStatuses] = useState<any[]>([]);
+  const [types, setTypes] = useState<any[]>([]);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [busyId, setBusyId] = useState<number | null>(null);
+  useEffect(() => {
+    api("/api/admin/dict?kind=statuses").then((r) => Array.isArray(r) && setStatuses(r));
+    api("/api/admin/dict?kind=types").then((r) => Array.isArray(r) && setTypes(r));
+  }, []);
+  const openScammer = async (scammerId: number) => {
+    if (busyId) return;
+    setBusyId(scammerId);
+    const r = await api("/api/admin/moderation?status=all&similar=0&id=" + scammerId);
+    setBusyId(null);
+    const item = r?.items?.find((x: any) => x.id === scammerId);
+    if (!item) return toast(r?.error || tt("Запис не знайдено (можливо, його вже видалено)", "Entry not found (it may have been deleted)", "Запись не найдена (возможно, её уже удалили)"));
+    setEditing(item);
+  };
+  const delScammer = async (scammerId: number) => {
+    if (!confirm(tt(`Видалити запис #${scammerId} назавжди разом з апеляціями, скаргами й коментарями?`, `Delete entry #${scammerId} permanently, with its appeals, reports and comments?`, `Удалить запись #${scammerId} навсегда вместе с апелляциями, жалобами и комментариями?`))) return;
+    const r = await api("/api/admin/scammers?id=" + scammerId, { method: "DELETE" });
+    if (r.error) return toast(r.error);
+    toast(tt("Запис видалено", "Entry deleted", "Запись удалена"));
+    load();
+  };
   return (
     <div>
       <div className="toolbar">
@@ -78,8 +103,13 @@ export function Appeals() {
             <button className="btn ghost" onClick={() => set(a.id, "rejected")}>{tt("Відхилити", "Reject", "Отклонить")}</button>
             <button className="btn ghost danger" onClick={() => set(a.id, "banned")}>{tt("Відхилити + бан IP", "Reject + ban IP", "Отклонить + бан IP")}</button>
           </div>
+          <div className="modal-actions" style={{ marginTop: 8 }}>
+            <button className="btn ghost" disabled={busyId === a.scammer.id} onClick={() => openScammer(a.scammer.id)}>{tt("✎ Редагувати запис", "✎ Edit entry", "✎ Редактировать запись")}</button>
+            <button className="btn ghost danger" onClick={() => delScammer(a.scammer.id)}>{tt("Видалити запис", "Delete entry", "Удалить запись")}</button>
+          </div>
         </div>
       ))}
+      {editing && <Editor item={editing} statuses={statuses} types={types} onClose={() => setEditing(null)} onSaved={load} />}
     </div>
   );
 }
@@ -233,7 +263,7 @@ export function BansTab({ isAdmin }: { isAdmin: boolean }) {
   const load = useCallback(async () => { const r = await api("/api/admin/bans"); setRows(Array.isArray(r) ? r : []); }, []);
   useEffect(() => { load(); }, [load]);
   const add = async () => { const r = await api("/api/admin/bans", { body: { ip, reason } }); if (r.error) return toast(r.error); setIp(""); setReason(""); load(); };
-  const del = async (id: number) => { await api("/api/admin/bans?id=" + id, { method: "DELETE" }); load(); };
+  const del = async (id: number) => { const r = await api("/api/admin/bans?id=" + id, { method: "DELETE" }); if (r.error) toast(r.error); load(); };
   return (
     <div>
       <div className="toolbar">

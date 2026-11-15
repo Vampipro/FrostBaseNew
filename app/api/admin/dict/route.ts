@@ -48,6 +48,12 @@ export async function DELETE(req: Request) {
   const m = dictModel(sp.get("kind") || "");
   const id = toInt(sp.get("id"));
   if (!m || !id) return fail("Не знайдено", 404);
-  await (prisma as any)[m].delete({ where: { id } }).catch(() => {});
+  try {
+    await (prisma as any)[m].delete({ where: { id } });
+  } catch (e: any) {
+    if (e?.code === "P2025") return fail("Уже видалено", 404);
+    console.error("dict delete failed", id, e?.code, e?.message);
+    return fail("Не вдалося видалити: " + (e?.code || "помилка бази даних"), 500);
+  }
   return ok({ ok: true });
 }

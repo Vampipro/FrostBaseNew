@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ok, fail, readBody, toInt } from "@/lib/http";
 import { requireStaff } from "@/lib/auth";
+import { scammerDeleteOps } from "@/lib/admin-scammer";
 
 export async function POST(req: Request) {
   if (!(await requireStaff())) return fail("Немає доступу", 403);
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
         data: { screenshots: shots, telegramUserId: target.telegramUserId ?? sc.telegramUserId, description: target.description || sc.description },
       }),
       prisma.comment.updateMany({ where: { scammerId: sc.id }, data: { scammerId: tid } }),
-      prisma.scammer.delete({ where: { id: sc.id } }),
+      ...scammerDeleteOps(sc.id),
     ]);
     return ok({ ok: true, mergedInto: tid });
   }

@@ -17,12 +17,14 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     const r = await api("/api/auth/" + mode, { body: { username: u, password: p } });
     if (r.error) { setBusy(false); return toast(r.error); }
-    await refreshMe();
+    try { await refreshMe(); } catch {}
     // повне перезавантаження надійніше за router.push: сесійна кука вже встановлена, стан чистий
     window.location.assign("/");
+    setTimeout(() => setBusy(false), 5000); // якщо перехід не відбувся — форма не лишається заблокованою
   };
   return (
     <main className="page">

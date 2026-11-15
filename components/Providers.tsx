@@ -17,16 +17,22 @@ type Ctx = {
 const C = createContext<Ctx>(null as unknown as Ctx);
 export const useApp = () => useContext(C);
 
-export async function api<T = any>(url: string, opts?: { method?: string; body?: unknown }): Promise<T & { error?: string }> {
+export async function api<T = any>(url: string, opts?: { method?: string; body?: unknown; timeoutMs?: number }): Promise<T & { error?: string }> {
+  // таймаут: запит, що завис, більше не блокує інтерфейс (поля, кнопки, пошук)
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), opts?.timeoutMs ?? 25_000);
   try {
     const r = await fetch(url, {
       method: opts?.method || (opts?.body ? "POST" : "GET"),
       headers: opts?.body ? { "content-type": "application/json" } : undefined,
       body: opts?.body ? JSON.stringify(opts.body) : undefined,
+      signal: ctrl.signal,
     });
     return await r.json();
-  } catch {
-    return { error: "Сетевая ошибка / Мережева помилка" } as any;
+  } catch (e: any) {
+    return { error: e?.name === "AbortError" ? "Сервер відповідає надто довго. Спробуй ще раз" : "Сетевая ошибка / Мережева помилка" } as any;
+  } finally {
+    clearTimeout(timer);
   }
 }
 

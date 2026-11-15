@@ -29,6 +29,12 @@ export async function DELETE(req: Request) {
   if (!(await requireStaff())) return fail("Немає доступу", 403);
   const id = toInt(new URL(req.url).searchParams.get("id"));
   if (!id) return fail("Некоректні дані");
-  await prisma.botCheck.delete({ where: { id } }).catch(() => null);
+  try {
+    await prisma.botCheck.delete({ where: { id } });
+  } catch (e: any) {
+    if (e?.code === "P2025") return fail("Уже видалено", 404);
+    console.error("bot-check delete failed", id, e?.code, e?.message);
+    return fail("Не вдалося видалити: " + (e?.code || "помилка бази даних"), 500);
+  }
   return ok({ ok: true });
 }

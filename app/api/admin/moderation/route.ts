@@ -20,6 +20,8 @@ export async function GET(req: Request) {
   const includeSimilar = sp.get("similar") !== "0";
 
   const and: any[] = [];
+  const onlyId = Number(sp.get("id")) || 0;
+  if (Number.isInteger(onlyId) && onlyId > 0) and.push({ id: onlyId });
   if (status !== "all") and.push({ moderation: status });
   if (Number.isInteger(typeId) && typeId > 0) and.push({ typeId });
   if (Number.isInteger(statusId) && statusId > 0) and.push({ statuses: { some: { statusId } } });

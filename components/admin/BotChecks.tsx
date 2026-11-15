@@ -16,7 +16,7 @@ export default function BotChecks() {
   useEffect(() => { load(); }, [load]);
   const VERD: Record<string, string> = { paid: tt("Виплатив", "Paid out", "Выплатил"), partial: tt("Частково", "Partially", "Частично"), not_paid: tt("Не виплатив", "Did not pay", "Не выплатил") };
   const set = async (id: number, s: string) => { const r = await api("/api/admin/bot-checks", { method: "PATCH", body: { id, status: s } }); toast(r.error || tt("Готово", "Done", "Готово")); load(); };
-  const del = async (id: number) => { if (!confirm(tt("Видалити перевірку?", "Delete this check?", "Удалить проверку?"))) return; await api("/api/admin/bot-checks?id=" + id, { method: "DELETE" }); load(); };
+  const del = async (id: number) => { if (!confirm(tt("Видалити перевірку?", "Delete this check?", "Удалить проверку?"))) return; const r = await api("/api/admin/bot-checks?id=" + id, { method: "DELETE" }); if (r.error) toast(r.error); load(); };
   return (
     <div>
       <div className="toolbar">

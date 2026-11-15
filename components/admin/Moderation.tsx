@@ -10,7 +10,7 @@ import AiTranslate from "./AiTranslate";
 
 const EMPTY = { name: "", telegramUserId: "", description: "", descUa: "", descEn: "", typeId: "", statusIds: [] as number[], scamAmount: "", scamCurrency: "", scamDate: "", proofLink: "", screenshots: "", moderation: "approved", appealsDisabled: false, botCheck: false, checking: false, botReward: "", botSponsors: "", botUsage: "" };
 
-function Editor({ item, statuses, types, onClose, onSaved }: { item: any | null; statuses: any[]; types: any[]; onClose: () => void; onSaved: () => void }) {
+export function Editor({ item, statuses, types, onClose, onSaved }: { item: any | null; statuses: any[]; types: any[]; onClose: () => void; onSaved: () => void }) {
   const { toast, lang } = useApp();
   const tt = useTT();
   const [f, setF] = useState<any>(() =>

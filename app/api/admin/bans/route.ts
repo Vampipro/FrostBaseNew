@@ -25,6 +25,13 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   if (!(await requireAdmin())) return fail("Немає доступу", 403);
   const id = toInt(new URL(req.url).searchParams.get("id"));
-  if (id) await prisma.bannedIp.delete({ where: { id } }).catch(() => {});
+  if (!id) return fail("Некоректні дані");
+  try {
+    await prisma.bannedIp.delete({ where: { id } });
+  } catch (e: any) {
+    if (e?.code === "P2025") return fail("Уже видалено", 404);
+    console.error("ban delete failed", id, e?.code, e?.message);
+    return fail("Не вдалося видалити: " + (e?.code || "помилка бази даних"), 500);
+  }
   return ok({ ok: true });
 }

@@ -72,3 +72,22 @@ export async function replaceStatuses(scammerId: number, statusIds: number[]) {
   await prisma.scammerStatusLink.deleteMany({ where: { scammerId } });
   if (ids.length) await prisma.scammerStatusLink.createMany({ data: ids.map((statusId) => ({ scammerId, statusId })), skipDuplicates: true });
 }
+
+/**
+ * Операції повного видалення запису разом з усіма залежностями.
+ * Явно чистимо дочірні таблиці, щоб видалення працювало навіть якщо в БД немає ON DELETE CASCADE.
+ */
+export function scammerDeleteOps(id: number) {
+  return [
+    prisma.commentReport.deleteMany({ where: { comment: { scammerId: id } } }),
+    prisma.comment.deleteMany({ where: { scammerId: id } }),
+    prisma.vote.deleteMany({ where: { scammerId: id } }),
+    prisma.appeal.deleteMany({ where: { scammerId: id } }),
+    prisma.submission.deleteMany({ where: { scammerId: id } }),
+    prisma.botCheck.deleteMany({ where: { scammerId: id } }),
+    prisma.scammerNameHistory.deleteMany({ where: { scammerId: id } }),
+    prisma.scammerStatusLink.deleteMany({ where: { scammerId: id } }),
+    prisma.searchLog.updateMany({ where: { scammerId: id }, data: { scammerId: null } }),
+    prisma.scammer.delete({ where: { id } }),
+  ];
+}

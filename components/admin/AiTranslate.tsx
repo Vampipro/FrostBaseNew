@@ -20,7 +20,7 @@ export default function AiTranslate({ values, onFill, kind = "desc" }: { values:
     const text = src ? values[src].trim() : "";
     if (!text) return toast(tt("Спочатку впиши текст", "Type some text first", "Сначала впиши текст"));
     setBusy(true);
-    const r = await api("/api/admin/translate", { body: { text, from, kind } });
+    const r = await api("/api/admin/translate", { body: { text, from, kind }, timeoutMs: 60_000 });
     setBusy(false);
     if (r.error) return toast(r.error);
     const det: L = r.detected;
