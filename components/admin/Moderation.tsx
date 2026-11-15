@@ -6,6 +6,7 @@ import Modal from "../Modal";
 import { uname, pickDesc } from "@/lib/name";
 import { useTT } from "./tt";
 import EvidenceGallery from "@/components/EvidenceGallery";
+import AiTranslate from "./AiTranslate";
 
 const EMPTY = { name: "", telegramUserId: "", description: "", descUa: "", descEn: "", typeId: "", statusIds: [] as number[], scamAmount: "", scamCurrency: "", scamDate: "", proofLink: "", screenshots: "", moderation: "approved", appealsDisabled: false, botCheck: false, checking: false, botReward: "", botSponsors: "", botUsage: "" };
 
@@ -101,6 +102,13 @@ function Editor({ item, statuses, types, onClose, onSaved }: { item: any | null;
         </label>
       </div>
       <label className="check"><input type="checkbox" checked={multi} onChange={(e) => setMulti(e.target.checked)} /> {tt("Описи кількома мовами (необов'язково; без галочки — лише російською)", "Descriptions in several languages (optional; unchecked — Russian only)", "Описания на нескольких языках (необязательно; без галочки — только русский)")}</label>
+      <AiTranslate
+        values={{ ru: f.description ?? "", ua: f.descUa ?? "", en: f.descEn ?? "" }}
+        onFill={(p) => {
+          setMulti(true);
+          setF((x: any) => ({ ...x, ...(p.ru !== undefined && { description: p.ru }), ...(p.ua !== undefined && { descUa: p.ua }), ...(p.en !== undefined && { descEn: p.en }) }));
+        }}
+      />
       <label className="field"><span>{multi ? tt("Опис (RU)", "Description (RU)", "Описание (RU)") : tt("Опис (RU, за замовчуванням)", "Description (RU, default)", "Описание (RU, по умолчанию)")}</span><textarea rows={3} value={f.description} onChange={(e) => set("description", e.target.value)} /></label>
       {multi && (
         <>

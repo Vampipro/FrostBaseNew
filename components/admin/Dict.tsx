@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { api, useApp } from "../Providers";
 import { useTT } from "./tt";
+import AiTranslate from "./AiTranslate";
 
 const blank = (kind: string) => ({
   id: 0,
@@ -102,6 +103,7 @@ function EditorRow({ kind, row, onDone, variant = "panel" }: EditorProps) {
             <small>{tt("Окремі назви для кожної мови сайту", "Names used for each site language", "Отдельные названия для каждого языка сайта")}</small>
           </div>
         </div>
+        <AiTranslate kind="label" values={{ ru: f.translations.ru, ua: f.translations.ua, en: f.translations.en }} onFill={(p) => setF((x: any) => ({ ...x, translations: { ...x.translations, ...p } }))} />
         <div className="dict-fields dict-fields-3">
           {(["ua", "en", "ru"] as const).map((l) => (
             <label className="field" key={l}>
