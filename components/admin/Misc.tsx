@@ -6,6 +6,7 @@ import { fmtDate } from "../ScammerCard";
 import EvidenceGallery from "@/components/EvidenceGallery";
 import { uname } from "@/lib/name";
 import { useTT } from "./tt";
+import AiTranslate from "./AiTranslate";
 
 export function Comments() {
   const { toast, lang } = useApp();
@@ -93,6 +94,7 @@ export function SettingsTab() {
   return (
     <div className="panel form-card">
       <h3 className="sub-title" style={{ marginTop: 0 }}>{tt("Інструкція у формі скарги", "Instruction in the report form", "Инструкция в форме жалобы")}</h3>
+      <AiTranslate values={s.instruction} onFill={(p) => setS((x: any) => ({ ...x, instruction: { ...x.instruction, ...p } }))} />
       {["ua", "en", "ru"].map((l) => (
         <label className="field" key={l}><span>{l.toUpperCase()}</span><textarea rows={5} value={s.instruction[l]} onChange={(e) => setS({ ...s, instruction: { ...s.instruction, [l]: e.target.value } })} /></label>
       ))}
