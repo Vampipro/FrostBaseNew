@@ -23,9 +23,9 @@ export default function ReportPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const shots = f.shots.split("\n").map((x) => x.trim()).filter(Boolean);
-    if (!isBot && shots.length === 0 && !f.proofLink.trim()) return toast(t("r_proofs_hint"));
+    if (!isBot && shots.length === 0) return toast(t("r_proofs_hint"));
     setBusy(true);
-    const common = { username: f.username, screenshots: shots, proofLink: f.proofLink.trim(), description: f.description, scamAmount: f.scamAmount, scamCurrency: f.scamCurrency, wantContact: f.wantContact, contactUsername: f.contactUsername, website: f.website };
+    const common = { username: f.username, screenshots: shots, description: f.description, scamAmount: f.scamAmount, scamCurrency: f.scamCurrency, wantContact: f.wantContact, contactUsername: f.contactUsername, website: f.website };
     const r = await api("/api/submissions", {
       body: isBot
         ? { ...common, kind: "bot", botSponsors: f.botSponsors, botUsage: f.botUsage }
@@ -43,7 +43,6 @@ export default function ReportPage() {
   const proofs = (
     <>
       <label className="field"><span>{t("r_shots_orig")}</span><textarea rows={isBot ? 3 : 4} value={f.shots} onChange={(e) => set("shots", e.target.value)} placeholder="https://t.me/..." /></label>
-      <label className="field"><span>{t("r_proof_reserve")}</span><input value={f.proofLink} onChange={(e) => set("proofLink", e.target.value)} maxLength={500} placeholder="https://..." /></label>
       {!isBot && <div className="hint">{t("r_proofs_hint")}</div>}
     </>
   );

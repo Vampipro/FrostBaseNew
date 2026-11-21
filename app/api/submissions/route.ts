@@ -26,9 +26,8 @@ export async function POST(req: Request) {
   if (!isBot && (!status || status.hidden || !status.showInForm)) return fail("Обери тег зі списку");
 
   const shots: string[] = Array.isArray(b.screenshots) ? b.screenshots.map((s: any) => String(s).trim()).filter(Boolean) : [];
-  const proof = str(b.proofLink, 500); // «докази» = резервна копія, скріншоти = оригінал
-  if (proof && !isHttpUrl(proof)) return fail("Докази (резерв): має бути посилання http(s)");
-  if (!isBot && shots.length < 1 && !proof) return fail("Додай скріншоти (оригінал) або посилання на докази (резерв)");
+  // резервну копію (proofLink) додають лише адміни через адмінку — від користувачів ігноруємо
+  if (!isBot && shots.length < 1) return fail("Додай хоча б один скріншот");
   if (shots.length > 10 || shots.some((s) => s.length > 500 || !isHttpUrl(s))) return fail("Скріншоти: до 10 коректних посилань http(s)");
 
   const wantContact = b.wantContact === true;
@@ -80,7 +79,7 @@ export async function POST(req: Request) {
         scamAmount: amount,
         scamCurrency: str(b.scamCurrency, 24),
         screenshots: shots,
-        proofLink: proof,
+        proofLink: "",
         statuses: { create: !isBot && status ? [{ statusId: status.id }] : [] },
         ...(isBot ? { botCheck: true, botReward: `${amountRaw} ${currency}`.trim(), botSponsors: Number(sponsorsRaw), botUsage: usageRaw, typeId: botType?.id ?? null } : {}),
       },
